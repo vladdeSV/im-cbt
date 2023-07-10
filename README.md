@@ -1,5 +1,12 @@
 # ImageMagick Command Builder Tool
 
+Build ImageMagick commands progmatically. Execute yourself.
+
+## Install
+```sh
+<package manager> add im-cbt
+```
+
 ## Examples
 
 ```ts
@@ -8,8 +15,15 @@ import { spawn } from 'child_process' // prevent malicious input; use spawn (NOT
 
 const im = IM()
 im.resource('logo:')
-  .resize(400, 300)
+  .resize(100, 200)
+  .gravity('Center')
+  .resource('rose:')
+  .geometry(-2, -10)
+  .composite()
+  .fill('green')
+  .command('-colorize', 30) // run special commands
 
+// run imagemagick yourself
 spawn('magick', [...im.parts(), 'output.png'])
 ```
 
@@ -24,10 +38,15 @@ im.parens(smallLogo)
   .composite()
 ```
 
-### Advanced
-There is a helper class to help when you need to provide unexpected amount of images as buffers.
+### Special case: Whack Edition™
+This snippet of code is for you when needing to…
+- generate an image async with Node.js
+- provide additional images as `Buffer`s
+- return output as `Buffer`
 
-This snippet is a bit of a hack, but I use this in a project.
+Providing `Buffer`s for images is a challenge, and a helper class `Fds` is provided to help create a reference to the data. See example below.
+
+This is a bit of a hack, but I use this code in a project.
 
 <details>
   <sumamry>Boilerplate snippet</summary>
@@ -36,27 +55,21 @@ This snippet is a bit of a hack, but I use this in a project.
 function bufferFromCommandBuilderFds(im: ImageMagickCommandBuilder, fds: Fds, filetype = 'PNG'): Promise<Buffer> {
   return new Promise<Buffer>((resolve, reject) => {
     const process = spawn('convert', [...im.parts(), filetype ? `${filetype}:-` : '-'], { stdio: ['pipe', 'pipe', 'pipe', ...(new Array(fds.fds().length).fill('pipe'))] })
-    console.log('spawned a process', process.pid)
 
     const buffers: Buffer[] = []
-    process.stdout.on('data', (data: Buffer) => {
-      buffers.push(data)
-    })
+    process.stderr.on('data', (data: Buffer) => { reject(data.toString()) })
+    process.stdout.on('data', (data: Buffer) => { buffers.push(data) })
     process.stdout.on('end', () => {
       const buffer = Buffer.concat(buffers)
-      console.log('ended a process', process.pid)
       resolve(buffer)
-    })
-    process.stderr.on('data', (data: Buffer) => {
-      reject(data.toString())
     })
 
     for (const [index, fd] of fds.fds().entries()) {
       const a = process.stdio[index + 3]
       if (!(a instanceof Writable)) {
-        console.error('not a writable stream', a)
         continue
       }
+
       a.end(fd)
     }
     process.stdin.end()
@@ -73,19 +86,12 @@ const fds = Fds()
 const userUploadedImage: Buffer | undefined = ... // some user uplaoded image
 
 if (userUploadedImage) {
-  const ref: string = fds.fd(userUploadedImage)
+  const ref: string = fds.fd(userUploadedImage) // create reference to buffer
   
-  im.resource(ref)
-    .composite()
+  im.resource(ref).composite()
 }
 
 const buffer = await bufferFromCommandBuilderFds(im, fds)
-
 ```
 
 </details>
-
-## Install
-```sh
-<package manager> add im-cbt
-```
