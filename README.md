@@ -23,7 +23,7 @@ im.resource('logo:')
   .fill('green')
   .command('-colorize', 30) // run special commands
 
-// run imagemagick yourself
+// run imagemagick yourself ('magick' / 'convert' / etc.)
 spawn('magick', [...im.parts(), 'output.png'])
 ```
 
