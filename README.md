@@ -49,7 +49,7 @@ Providing `Buffer`s for images is a challenge, and a helper class `Fds` is provi
 This is a bit of a hack, but I use this code in a project.
 
 <details>
-  <sumamry>Boilerplate snippet</summary>
+  <summary>Boilerplate snippet</summary>
 
 ```ts
 function bufferFromCommandBuilderFds(im: ImageMagickCommandBuilder, fds: Fds, filetype = 'PNG'): Promise<Buffer> {
