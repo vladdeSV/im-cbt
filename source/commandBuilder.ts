@@ -27,8 +27,8 @@ class ImageMagickCommandBuilder {
     return a
   }
 
-  command(...commands: string[]): this {
-    this.#commands.push(...commands)
+  command(...commands: (string | number)[]): this {
+    this.#commands.push(...commands.map(String))
 
     return this
   }
