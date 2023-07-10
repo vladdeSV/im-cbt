@@ -1,5 +1,5 @@
+
 import { ImageMagickCommandBuilder as IMCB } from './commandBuilder'
-import IM from './index'
 
 test('empty command', () => {
   const command = new IMCB()
@@ -21,13 +21,9 @@ test('command with nested command', () => {
   expect(command.parts()).toEqual(['-', '(', 'test', ')', '-gravity', 'NorthEast', '-geometry', '+10+10', '-composite'])
 })
 
-test('test', () => {
-  const im = IM('rose:')
-
-  const smallLogo = IM('logo:')
-    .resizeExt(g => g.size(200, 300).flag('^'))
-
-  im.parens(smallLogo)
-    .gravity('SouthEast')
-    .composite()
+test('command custom commands with numbers and strings', () => {
+  const command = new IMCB('-')
+    .command('-colorize', 30)
+    .command('-colorize', '30')
+  expect(command.parts()).toEqual(['-', '-colorize', '30', '-colorize', '30'])
 })
