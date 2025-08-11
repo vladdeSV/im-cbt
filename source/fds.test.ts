@@ -1,3 +1,4 @@
+import { test, expect } from 'bun:test'
 import { Fds } from './fds'
 
 test('custom buffer resources', () => {

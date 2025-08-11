@@ -1,4 +1,4 @@
-
+import { test, expect } from 'bun:test'
 import { ImageMagickCommandBuilder as IMCB } from './commandBuilder'
 
 test('empty command', () => {
@@ -26,4 +26,18 @@ test('command custom commands with numbers and strings', () => {
     .command('-colorize', 30)
     .command('-colorize', '30')
   expect(command.parts()).toEqual(['-', '-colorize', '30', '-colorize', '30'])
+})
+
+test('size method variations', () => {
+  // width only
+  expect(new IMCB().size(100).parts()).toEqual(['-size', '100x'])
+  
+  // width and height
+  expect(new IMCB().size(100, 200).parts()).toEqual(['-size', '100x200'])
+  
+  // height only
+  expect(new IMCB().size(undefined, 200).parts()).toEqual(['-size', 'x200'])
+  
+  // no parameters - should use +size instead of -size
+  expect(new IMCB().size().parts()).toEqual(['+size'])
 })

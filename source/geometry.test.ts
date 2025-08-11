@@ -1,3 +1,4 @@
+import { describe, test, expect } from 'bun:test'
 import { Geometry } from './geometry'
 
 const validOffsets: [number, number, string][] = [
