@@ -89,7 +89,14 @@ class Geometry {
         const w = width === undefined ? '' : Number(width)
         const h = height === undefined ? '' : Number(height)
 
-        parts.push(`${w}x${h}`)
+        if (width === undefined && height === undefined) {
+          console.warn('geometry size with both width and height undefined')
+          parts.push('')
+        } else if (width !== undefined && height === undefined) {
+          parts.push(`${w}`)
+        } else {
+          parts.push(`${w}x${h}`)
+        }
         break
       }
       case 'scale': {

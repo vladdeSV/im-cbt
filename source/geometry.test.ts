@@ -27,10 +27,10 @@ describe('geometry misc', () => {
     const provider: [number | undefined, number | undefined, string][] = [
       [0, 0, '0x0'],
       [-10, 32, '-10x32'],
-      [12, undefined, '12x'],
+      [12, undefined, '12'],
       [undefined, 14, 'x14'],
       [123.123, 32.32, '123.123x32.32'],
-      [123.123, undefined, '123.123x'],
+      [123.123, undefined, '123.123'],
       [undefined, undefined, ''],
     ]
 

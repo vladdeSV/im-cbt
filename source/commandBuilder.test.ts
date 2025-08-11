@@ -29,10 +29,7 @@ test('command custom commands with numbers and strings', () => {
 })
 
 test('size method variations', () => {
-  // width only
-  expect(new IMCB().size(100).parts()).toEqual(['-size', '100x'])
-  
-  // width and height
+  expect(new IMCB().size(100).parts()).toEqual(['-size', '100'])
   expect(new IMCB().size(100, 200).parts()).toEqual(['-size', '100x200'])
   
   // height only
