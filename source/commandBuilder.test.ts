@@ -95,3 +95,85 @@ test('sharpen method', () => {
   expect(new IMCB().sharpen(0, 1).parts()).toEqual(['-sharpen', '0x1'])
   expect(new IMCB().sharpen(2).parts()).toEqual(['-sharpen', '2'])
 })
+
+test('alpha method', () => {
+  expect(new IMCB().alpha('Set').parts()).toEqual(['-alpha', 'Set'])
+  expect(new IMCB().alpha('Transparent').parts()).toEqual(['-alpha', 'Transparent'])
+  expect(new IMCB().alpha('Off').parts()).toEqual(['-alpha', 'Off'])
+})
+
+test('clone method variations', () => {
+  expect(new IMCB().clone().parts()).toEqual(['+clone'])
+  expect(new IMCB().clone(1).parts()).toEqual(['-clone', '1'])
+  expect(new IMCB().clone(-1).parts()).toEqual(['-clone', '-1'])
+})
+
+test('compose method', () => {
+  expect(new IMCB().compose('Multiply').parts()).toEqual(['-compose', 'Multiply'])
+  expect(new IMCB().compose('Overlay').parts()).toEqual(['-compose', 'Overlay'])
+  expect(new IMCB().compose('Screen').parts()).toEqual(['-compose', 'Screen'])
+})
+
+test('extent method', () => {
+  expect(new IMCB().extent(200, 300).parts()).toEqual(['-extent', '200x300'])
+  expect(new IMCB().extent(100, 100).parts()).toEqual(['-extent', '100x100'])
+})
+
+test('fill method', () => {
+  expect(new IMCB().fill('red').parts()).toEqual(['-fill', 'red'])
+  expect(new IMCB().fill('#FF0000').parts()).toEqual(['-fill', '#FF0000'])
+  expect(new IMCB().fill('none').parts()).toEqual(['-fill', 'none'])
+})
+
+test('filter method', () => {
+  expect(new IMCB().filter('Lanczos').parts()).toEqual(['-filter', 'Lanczos'])
+  expect(new IMCB().filter('Point').parts()).toEqual(['-filter', 'Point'])
+  expect(new IMCB().filter('Mitchell').parts()).toEqual(['-filter', 'Mitchell'])
+})
+
+test('font method', () => {
+  expect(new IMCB().font('Arial').parts()).toEqual(['-font', 'Arial'])
+  expect(new IMCB().font('/path/to/font.ttf').parts()).toEqual(['-font', '/path/to/font.ttf'])
+  expect(new IMCB().font('Times New Roman').parts()).toEqual(['-font', 'Times New Roman'])
+})
+
+test('interpolate method', () => {
+  expect(new IMCB().interpolate('Bilinear').parts()).toEqual(['-interpolate', 'Bilinear'])
+  expect(new IMCB().interpolate('Spline').parts()).toEqual(['-interpolate', 'Spline'])
+  expect(new IMCB().interpolate('Nearest').parts()).toEqual(['-interpolate', 'Nearest'])
+})
+
+test('label method', () => {
+  expect(new IMCB().label('Hello World').parts()).toEqual(['label:Hello World'])
+  expect(new IMCB().label('Test Label').parts()).toEqual(['label:Test Label'])
+  expect(new IMCB().label(123).parts()).toEqual(['label:123'])
+})
+
+test('opaque method', () => {
+  expect(new IMCB().opaque('red').parts()).toEqual(['-opaque', 'red'])
+  expect(new IMCB().opaque('blue', true).parts()).toEqual(['+opaque', 'blue'])
+  expect(new IMCB().opaque('#FF0000').parts()).toEqual(['-opaque', '#FF0000'])
+})
+
+test('pointsize method', () => {
+  expect(new IMCB().pointsize(12).parts()).toEqual(['-pointsize', '12'])
+  expect(new IMCB().pointsize(24).parts()).toEqual(['-pointsize', '24'])
+  expect(new IMCB().pointsize().parts()).toEqual(['+pointsize'])
+})
+
+test('resize method', () => {
+  expect(new IMCB().resize(100, 200).parts()).toEqual(['-resize', '100x200'])
+  expect(new IMCB().resize(50).parts()).toEqual(['-resize', '50'])
+  expect(new IMCB().resize(undefined, 100).parts()).toEqual(['-resize', 'x100'])
+})
+
+test('resizeExt method', () => {
+  expect(new IMCB().resizeExt(g => g.size(100, 100).flag('!')).parts())
+    .toEqual(['-resize', '100x100!'])
+  expect(new IMCB().resizeExt(g => g.scale(50)).parts())
+    .toEqual(['-resize', '50%'])
+})
+
+test('trim method', () => {
+  expect(new IMCB().trim().parts()).toEqual(['-trim'])
+})
