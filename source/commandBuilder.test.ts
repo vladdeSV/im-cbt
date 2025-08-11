@@ -177,3 +177,87 @@ test('resizeExt method', () => {
 test('trim method', () => {
   expect(new IMCB().trim().parts()).toEqual(['-trim'])
 })
+
+test('adaptive-blur method', () => {
+  // adaptive-blur with radius and sigma
+  expect(new IMCB().adaptiveBlur(2, 1).parts()).toEqual(['-adaptive-blur', '2x1'])
+  expect(new IMCB().adaptiveBlur(0, 1.5).parts()).toEqual(['-adaptive-blur', '0x1.5'])
+  expect(new IMCB().adaptiveBlur(5, 2).parts()).toEqual(['-adaptive-blur', '5x2'])
+  
+  // adaptive-blur with radius only (sigma defaults to 1)
+  expect(new IMCB().adaptiveBlur(3).parts()).toEqual(['-adaptive-blur', '3'])
+  expect(new IMCB().adaptiveBlur(0).parts()).toEqual(['-adaptive-blur', '0'])
+})
+
+test('adaptive-resize method', () => {
+  // adaptive-resize with width and height
+  expect(new IMCB().adaptiveResize(100, 200).parts()).toEqual(['-adaptive-resize', '100x200'])
+  expect(new IMCB().adaptiveResize(300, 150).parts()).toEqual(['-adaptive-resize', '300x150'])
+  
+  // adaptive-resize with width only
+  expect(new IMCB().adaptiveResize(150).parts()).toEqual(['-adaptive-resize', '150'])
+  
+  // adaptive-resize with height only  
+  expect(new IMCB().adaptiveResize(undefined, 200).parts()).toEqual(['-adaptive-resize', 'x200'])
+})
+
+test('adaptive-resize-ext method', () => {
+  // adaptive-resize with percentage scaling
+  expect(new IMCB().adaptiveResizeExt(g => g.scale(50)).parts()).toEqual(['-adaptive-resize', '50%'])
+  expect(new IMCB().adaptiveResizeExt(g => g.scale(75, 80)).parts()).toEqual(['-adaptive-resize', '75%x80%'])
+  
+  // adaptive-resize with size and flag
+  expect(new IMCB().adaptiveResizeExt(g => g.size(200, 100).flag('!')).parts()).toEqual(['-adaptive-resize', '200x100!'])
+})
+
+test('adaptive-sharpen method', () => {
+  // adaptive-sharpen with radius and sigma
+  expect(new IMCB().adaptiveSharpen(2, 1).parts()).toEqual(['-adaptive-sharpen', '2x1'])
+  expect(new IMCB().adaptiveSharpen(0, 1.5).parts()).toEqual(['-adaptive-sharpen', '0x1.5'])
+  expect(new IMCB().adaptiveSharpen(5, 2).parts()).toEqual(['-adaptive-sharpen', '5x2'])
+  
+  // adaptive-sharpen with radius only (sigma defaults to 1)
+  expect(new IMCB().adaptiveSharpen(3).parts()).toEqual(['-adaptive-sharpen', '3'])
+  expect(new IMCB().adaptiveSharpen(0).parts()).toEqual(['-adaptive-sharpen', '0'])
+})
+
+test('adjoin method', () => {
+  expect(new IMCB().adjoin().parts()).toEqual(['-adjoin'])
+  expect(new IMCB().adjoin(false).parts()).toEqual(['+adjoin'])
+  expect(new IMCB().adjoin(true).parts()).toEqual(['-adjoin'])
+})
+
+test('antialias method', () => {
+  expect(new IMCB().antialias().parts()).toEqual(['-antialias'])
+  expect(new IMCB().antialias(false).parts()).toEqual(['+antialias'])
+  expect(new IMCB().antialias(true).parts()).toEqual(['-antialias'])
+})
+
+test('append method', () => {
+  expect(new IMCB().append().parts()).toEqual(['-append'])
+  expect(new IMCB().append(true).parts()).toEqual(['+append'])
+  expect(new IMCB().append(false).parts()).toEqual(['-append'])
+})
+
+test('colorize method', () => {
+  expect(new IMCB().colorize(50).parts()).toEqual(['-colorize', '50'])
+  expect(new IMCB().colorize(30, 70).parts()).toEqual(['-colorize', '30,70'])
+  expect(new IMCB().colorize(30, 70, 50).parts()).toEqual(['-colorize', '30,70,50'])
+  expect(new IMCB().colorize(100).parts()).toEqual(['-colorize', '100'])
+})
+
+test('colorspace method', () => {
+  expect(new IMCB().colorspace('Gray').parts()).toEqual(['-colorspace', 'Gray'])
+  expect(new IMCB().colorspace('sRGB').parts()).toEqual(['-colorspace', 'sRGB'])
+  expect(new IMCB().colorspace('CMYK').parts()).toEqual(['-colorspace', 'CMYK'])
+})
+
+test('contrast method', () => {
+  expect(new IMCB().contrast().parts()).toEqual(['-contrast'])
+  expect(new IMCB().contrast(false).parts()).toEqual(['+contrast'])
+  expect(new IMCB().contrast(true).parts()).toEqual(['-contrast'])
+})
+
+test('enhance method', () => {
+  expect(new IMCB().enhance().parts()).toEqual(['-enhance'])
+})

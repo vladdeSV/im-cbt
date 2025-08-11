@@ -38,6 +38,197 @@ im.parens(smallLogo)
   .composite()
 ```
 
+## Coverage
+
+The most common options are supported. If you need something missing, you can do `im.command('-colorize', 50)`
+
+- [x] `-adaptive-blur` - Adaptive blur filter
+- [x] `-adaptive-resize` - Adaptive resize using triangulation
+- [x] `-adaptive-sharpen` - Adaptive sharpen near edges
+- [x] `-adjoin` - Join images into single multi-image file
+- [ ] `-affine`
+- [x] `-alpha` - Alpha channel operations
+- [ ] `-annotate`
+- [x] `-antialias` - Enable/disable antialiasing
+- [x] `-append` - Append images vertically or horizontally
+- [ ] `-authenticate`
+- [ ] `-auto-gamma`
+- [ ] `-auto-level`
+- [ ] `-auto-orient`
+- [x] `-background` - Set background color
+- [ ] `-bias`
+- [ ] `-black-point-compensation`
+- [ ] `-black-threshold`
+- [x] `-blur` - Apply blur effect
+- [ ] `-border`
+- [ ] `-bordercolor`
+- [ ] `-brightness-contrast`
+- [ ] `-channel`
+- [ ] `-charcoal`
+- [ ] `-chop`
+- [x] `-clone` - Clone image
+- [x] `-colorize` - Colorize image with fill color
+- [x] `-colorspace` - Set color space
+- [x] `-compose` - Composition operator
+- [x] `-composite` - Composite images
+- [ ] `-compress`
+- [x] `-contrast` - Adjust contrast
+- [ ] `-contrast-stretch`
+- [ ] `-convolve`
+- [x] `-crop` - Crop image region
+- [ ] `-cycle`
+- [ ] `-debug`
+- [ ] `-define`
+- [ ] `-delay`
+- [ ] `-density`
+- [ ] `-depth`
+- [ ] `-despeckle`
+- [ ] `-direction`
+- [ ] `-display`
+- [ ] `-dispose`
+- [ ] `-distort`
+- [ ] `-dither`
+- [ ] `-draw`
+- [ ] `-duplicate`
+- [ ] `-edge`
+- [ ] `-emboss`
+- [ ] `-encoding`
+- [ ] `-endian`
+- [x] `-enhance` - Enhance image
+- [ ] `-equalize`
+- [ ] `-evaluate`
+- [x] `-extent` - Extend image canvas
+- [ ] `-extract`
+- [ ] `-family`
+- [x] `-fill` - Set fill color
+- [x] `-filter` - Resize filter
+- [ ] `-flatten`
+- [x] `-flip` - Vertical flip
+- [x] `-flop` - Horizontal flip
+- [x] `-font` - Set font family
+- [ ] `-format`
+- [ ] `-frame`
+- [ ] `-function`
+- [ ] `-fuzz`
+- [ ] `-fx`
+- [ ] `-gamma`
+- [ ] `-gaussian-blur`
+- [x] `-geometry` - Position geometry
+- [x] `-gravity` - Set positioning gravity
+- [ ] `-grayscale`
+- [ ] `-help`
+- [ ] `-identify`
+- [ ] `-implode`
+- [ ] `-insert`
+- [ ] `-intent`
+- [ ] `-interlace`
+- [x] `-interpolate` - Interpolation method
+- [ ] `-kerning`
+- [x] `-label` - Create text label
+- [ ] `-lat`
+- [ ] `-layers`
+- [ ] `-level`
+- [ ] `-limit`
+- [ ] `-linear-stretch`
+- [ ] `-liquid-rescale`
+- [ ] `-loop`
+- [ ] `-map`
+- [ ] `-mattecolor`
+- [ ] `-median`
+- [ ] `-modulate`
+- [ ] `-monitor`
+- [ ] `-monochrome`
+- [ ] `-morphology`
+- [ ] `-mosaic`
+- [ ] `-motion-blur`
+- [ ] `-negate`
+- [ ] `-noise`
+- [ ] `-normalize`
+- [x] `-opaque` - Color replacement
+- [ ] `-ordered-dither`
+- [ ] `-orient`
+- [ ] `-page`
+- [ ] `-paint`
+- [ ] `-ping`
+- [x] `-pointsize` - Set text size
+- [ ] `-polaroid`
+- [ ] `-posterize`
+- [ ] `-preview`
+- [ ] `-print`
+- [ ] `-profile`
+- [x] `-quality` - Set compression quality
+- [ ] `-quantize`
+- [ ] `-quiet`
+- [ ] `-radial-blur`
+- [ ] `-raise`
+- [ ] `-random-threshold`
+- [ ] `-red-primary`
+- [ ] `-regard-warnings`
+- [ ] `-remap`
+- [ ] `-render`
+- [ ] `-repage`
+- [ ] `-resample`
+- [x] `-resize` - Resize image
+- [ ] `-reverse`
+- [ ] `-roll`
+- [x] `-rotate` - Rotate image by degrees
+- [ ] `-sample`
+- [ ] `-sampling-factor`
+- [ ] `-scale`
+- [ ] `-scene`
+- [ ] `-seed`
+- [ ] `-segment`
+- [ ] `-selective-blur`
+- [ ] `-separate`
+- [ ] `-sepia-tone`
+- [ ] `-set`
+- [ ] `-shade`
+- [ ] `-shadow`
+- [x] `-sharpen` - Apply sharpen effect
+- [ ] `-shave`
+- [ ] `-shear`
+- [ ] `-sigmoidal-contrast`
+- [x] `-size` - Set image dimensions
+- [ ] `-sketch`
+- [ ] `-smush`
+- [ ] `-solarize`
+- [ ] `-splice`
+- [ ] `-spread`
+- [ ] `-statistic`
+- [ ] `-stretch`
+- [x] `-strip` - Remove metadata
+- [ ] `-stroke`
+- [ ] `-strokewidth`
+- [ ] `-style`
+- [ ] `-swap`
+- [ ] `-swirl`
+- [ ] `-texture`
+- [ ] `-threshold`
+- [ ] `-thumbnail`
+- [ ] `-tile`
+- [ ] `-tint`
+- [ ] `-transform`
+- [ ] `-transparent`
+- [ ] `-transpose`
+- [ ] `-transverse`
+- [ ] `-treedepth`
+- [x] `-trim` - Remove edges
+- [ ] `-type`
+- [ ] `-undercolor`
+- [ ] `-unique-colors`
+- [ ] `-units`
+- [ ] `-unsharp`
+- [ ] `-verbose`
+- [ ] `-version`
+- [ ] `-view`
+- [ ] `-vignette`
+- [ ] `-virtual-pixel`
+- [ ] `-wave`
+- [ ] `-weight`
+- [ ] `-white-point`
+- [ ] `-white-threshold`
+- [ ] `-write`
+
 ### Special case: Whack Edition™
 This snippet of code is for you when needing to…
 - generate an image async with Node.js

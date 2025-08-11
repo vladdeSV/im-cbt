@@ -270,6 +270,115 @@ class ImageMagickCommandBuilder {
     return this
   }
 
+  adaptiveBlur(radius: number, sigma?: number): this {
+    this.#commands.push('-adaptive-blur')
+    
+    if (sigma !== undefined) {
+      this.#commands.push(this.#escape(`${radius}x${sigma}`))
+    } else {
+      this.#commands.push(this.#escape(radius))
+    }
+
+    return this
+  }
+
+  adaptiveResize(w?: number, h?: number): this {
+    if (w || h) {
+      this.#commands.push('-adaptive-resize')
+      this.#commands.push(this.#escape(new Geometry().size(w, h).toString()))
+    }
+
+    return this
+  }
+
+  adaptiveResizeExt(fn: (g: Geometry) => Geometry): this {
+    const geometry = fn(new Geometry())
+
+    this.#commands.push('-adaptive-resize')
+    this.#commands.push(this.#escape(geometry.toString()))
+
+    return this
+  }
+
+  adaptiveSharpen(radius: number, sigma?: number): this {
+    this.#commands.push('-adaptive-sharpen')
+    
+    if (sigma !== undefined) {
+      this.#commands.push(this.#escape(`${radius}x${sigma}`))
+    } else {
+      this.#commands.push(this.#escape(radius))
+    }
+
+    return this
+  }
+
+  adjoin(enable?: boolean): this {
+    if (enable === false) {
+      this.#commands.push('+adjoin')
+    } else {
+      this.#commands.push('-adjoin')
+    }
+
+    return this
+  }
+
+  antialias(enable?: boolean): this {
+    if (enable === false) {
+      this.#commands.push('+antialias')
+    } else {
+      this.#commands.push('-antialias')
+    }
+
+    return this
+  }
+
+  append(horizontal?: boolean): this {
+    if (horizontal === true) {
+      this.#commands.push('+append')
+    } else {
+      this.#commands.push('-append')
+    }
+
+    return this
+  }
+
+  colorize(red: number, green?: number, blue?: number): this {
+    this.#commands.push('-colorize')
+    
+    if (green !== undefined && blue !== undefined) {
+      this.#commands.push(this.#escape(`${red},${green},${blue}`))
+    } else if (green !== undefined) {
+      this.#commands.push(this.#escape(`${red},${green}`))
+    } else {
+      this.#commands.push(this.#escape(red))
+    }
+
+    return this
+  }
+
+  colorspace(type: string): this {
+    this.#commands.push('-colorspace')
+    this.#commands.push(this.#escape(type))
+
+    return this
+  }
+
+  contrast(enable?: boolean): this {
+    if (enable === false) {
+      this.#commands.push('+contrast')
+    } else {
+      this.#commands.push('-contrast')
+    }
+
+    return this
+  }
+
+  enhance(): this {
+    this.#commands.push('-enhance')
+
+    return this
+  }
+
   sanitize(input: unknown) {
     return this.#escape(input)
   }
