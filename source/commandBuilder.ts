@@ -107,6 +107,90 @@ class ImageMagickCommandBuilder {
     return this
   }
 
+  crop(w: number, h: number, x?: number, y?: number): this {
+    this.#commands.push('-crop')
+    
+    const geometry = new Geometry().size(w, h)
+    if (x !== undefined && y !== undefined) {
+      geometry.offset(x, y)
+    }
+    
+    this.#commands.push(this.#escape(geometry.toString()))
+
+    return this
+  }
+
+  cropExt(fn: (g: Geometry) => Geometry): this {
+    const geometry = fn(new Geometry())
+
+    this.#commands.push('-crop')
+    this.#commands.push(this.#escape(geometry.toString()))
+
+    return this
+  }
+
+  rotate(degrees: number, flag?: '<' | '>'): this {
+    this.#commands.push('-rotate')
+    
+    const rotation = flag ? `${degrees}${flag}` : `${degrees}`
+    this.#commands.push(this.#escape(rotation))
+
+    return this
+  }
+
+  flip(): this {
+    this.#commands.push('-flip')
+
+    return this
+  }
+
+  flop(): this {
+    this.#commands.push('-flop')
+
+    return this
+  }
+
+  quality(value?: number): this {
+    if (value === undefined) {
+      this.#commands.push('+quality')
+    } else {
+      this.#commands.push('-quality')
+      this.#commands.push(this.#escape(value))
+    }
+
+    return this
+  }
+
+  strip(): this {
+    this.#commands.push('-strip')
+
+    return this
+  }
+
+  blur(radius: number, sigma?: number): this {
+    this.#commands.push('-blur')
+    
+    if (sigma !== undefined) {
+      this.#commands.push(this.#escape(`${radius}x${sigma}`))
+    } else {
+      this.#commands.push(this.#escape(radius))
+    }
+
+    return this
+  }
+
+  sharpen(radius: number, sigma?: number): this {
+    this.#commands.push('-sharpen')
+    
+    if (sigma !== undefined) {
+      this.#commands.push(this.#escape(`${radius}x${sigma}`))
+    } else {
+      this.#commands.push(this.#escape(radius))
+    }
+
+    return this
+  }
+
   background(background: string): this {
     this.#commands.push('-background')
     this.#commands.push(this.#escape(background))
