@@ -55,11 +55,7 @@ class ImageMagickCommandBuilder {
   xc(width: number, height: number): this
   xc(color: string, size: number): this
   xc(color: string, width: number, height: number): this
-  xc(
-    colorOrWidth?: string | number | undefined,
-    widthOrHeight?: number,
-    height?: number
-  ): this {
+  xc(colorOrWidth?: string | number | undefined, widthOrHeight?: number, height?: number): this {
     return this.#canvas('xc', colorOrWidth, widthOrHeight, height)
   }
 
@@ -69,11 +65,7 @@ class ImageMagickCommandBuilder {
   canvas(width: number, height: number): this
   canvas(color: string, size: number): this
   canvas(color: string, width: number, height: number): this
-  canvas(
-    colorOrWidth?: string | number | undefined,
-    widthOrHeight?: number,
-    height?: number
-  ): this {
+  canvas(colorOrWidth?: string | number | undefined, widthOrHeight?: number, height?: number): this {
     return this.#canvas('canvas', colorOrWidth, widthOrHeight, height)
   }
 
@@ -120,7 +112,7 @@ class ImageMagickCommandBuilder {
     if (sizeParts.length > 0) {
       output += '['
       output += sizeParts.join('x')
-      if (sizeParts.length == 2) {
+      if (sizeParts.length === 2) {
         output += '!'
       }
       output += ']'
@@ -505,14 +497,7 @@ class ImageMagickCommandBuilder {
     return this
   }
 
-  affine(
-    sx: number,
-    rx: number,
-    ry: number,
-    sy: number,
-    tx?: number,
-    ty?: number
-  ): this {
+  affine(sx: number, rx: number, ry: number, sy: number, tx?: number, ty?: number): this {
     this.#commands.push('-affine')
 
     if (tx !== undefined && ty !== undefined) {
@@ -944,12 +929,7 @@ class ImageMagickCommandBuilder {
     return this
   }
 
-  frame(
-    width: number,
-    height: number,
-    outerBevel?: number,
-    innerBevel?: number
-  ): this {
+  frame(width: number, height: number, outerBevel?: number, innerBevel?: number): this {
     this.#commands.push('-frame')
 
     let frameSpec = `${width}x${height}`
@@ -1061,12 +1041,7 @@ class ImageMagickCommandBuilder {
     return this
   }
 
-  liquidRescale(
-    width: number,
-    height?: number,
-    deltaX?: number,
-    rigidity?: number
-  ): this {
+  liquidRescale(width: number, height?: number, deltaX?: number, rigidity?: number): this {
     this.#commands.push('-liquid-rescale')
 
     let rescaleSpec = `${width}`
@@ -1128,11 +1103,7 @@ class ImageMagickCommandBuilder {
     return this
   }
 
-  morphology(
-    method: MorphologyType,
-    kernel: string,
-    iterations?: number
-  ): this {
+  morphology(method: MorphologyType, kernel: string, iterations?: number): this {
     this.#commands.push('-morphology')
 
     if (iterations !== undefined) {
@@ -1458,11 +1429,7 @@ class ImageMagickCommandBuilder {
     return this
   }
 
-  sigmoidalContrast(
-    contrast: number,
-    midpoint: number,
-    sharpen?: boolean
-  ): this {
+  sigmoidalContrast(contrast: number, midpoint: number, sharpen?: boolean): this {
     if (sharpen === true) {
       this.#commands.push('+sigmoidal-contrast')
     } else {
@@ -1500,9 +1467,7 @@ class ImageMagickCommandBuilder {
 
   splice(width: number, height: number, x: number, y: number): this {
     this.#commands.push('-splice')
-    this.#commands.push(
-      new Geometry().size(width, height).offset(x, y)
-    )
+    this.#commands.push(new Geometry().size(width, height).offset(x, y))
 
     return this
   }
@@ -1576,7 +1541,7 @@ class ImageMagickCommandBuilder {
       this.#commands.push('+threshold')
     } else {
       this.#commands.push('-threshold')
-      this.#commands.push(percentage + '%')
+      this.#commands.push(`${percentage}%`)
     }
 
     return this
@@ -1609,8 +1574,7 @@ class ImageMagickCommandBuilder {
 
   tint(percentage: number): this {
     this.#commands.push('-tint')
-    this.#commands.push(percentage + '%')
-
+    this.#commands.push(`${percentage}%`)
     return this
   }
 
@@ -1673,12 +1637,7 @@ class ImageMagickCommandBuilder {
     return this
   }
 
-  unsharp(
-    radius: number = 0,
-    sigma: number,
-    amount: number,
-    threshold: number
-  ): this {
+  unsharp(radius: number = 0, sigma: number, amount: number, threshold: number): this {
     this.#commands.push('-unsharp')
     this.#commands.push(`${radius}x${sigma}+${amount}+${threshold}`)
 
@@ -2262,28 +2221,10 @@ class ImageMagickCommandBuilder {
     return this
   }
 
-  copy(
-    width: number,
-    height: number,
-    sourceX: number,
-    sourceY: number,
-    destX: number,
-    destY: number
-  ): this {
+  copy(width: number, height: number, sourceX: number, sourceY: number, destX: number, destY: number): this {
     this.#commands.push('-copy')
-    this.#commands.push(
-      // `${width}x${height}${sourceX >= 0 ? '+' : ''}${sourceX}${sourceY >= 0 ? '+' : ''}${sourceY}`
-      new Geometry()
-        .size(width, height)
-        .offset(sourceX, sourceY)
-
-    )
-    this.#commands.push(
-      //`${destX >= 0 ? '+' : ''}${destX}${destY >= 0 ? '+' : ''}${destY}`
-      new Geometry()
-        .offset(destX, destY)
-
-    )
+    this.#commands.push(new Geometry().size(width, height).offset(sourceX, sourceY))
+    this.#commands.push(new Geometry().offset(destX, destY))
 
     return this
   }
@@ -2397,38 +2338,17 @@ class DrawBuilder {
     return this
   }
 
-  roundRectangle(
-    x0: number,
-    y0: number,
-    x1: number,
-    y1: number,
-    wc: number,
-    hc: number
-  ): this {
+  roundRectangle(x0: number, y0: number, x1: number, y1: number, wc: number, hc: number): this {
     this.#primitives.push(`roundRectangle ${x0},${y0} ${x1},${y1} ${wc},${hc}`)
     return this
   }
 
-  arc(
-    x0: number,
-    y0: number,
-    x1: number,
-    y1: number,
-    a0: number,
-    a1: number
-  ): this {
+  arc(x0: number, y0: number, x1: number, y1: number, a0: number, a1: number): this {
     this.#primitives.push(`arc ${x0},${y0} ${x1},${y1} ${a0},${a1}`)
     return this
   }
 
-  ellipse(
-    x0: number,
-    y0: number,
-    rx: number,
-    ry: number,
-    a0: number,
-    a1: number
-  ): this {
+  ellipse(x0: number, y0: number, rx: number, ry: number, a0: number, a1: number): this {
     this.#primitives.push(`ellipse ${x0},${y0} ${rx},${ry} ${a0},${a1}`)
     return this
   }
@@ -2461,17 +2381,8 @@ class DrawBuilder {
     return this
   }
 
-  image(
-    operator: string,
-    x0: number,
-    y0: number,
-    w: number,
-    h: number,
-    filename: string
-  ): this {
-    this.#primitives.push(
-      `image ${operator} ${x0},${y0} ${w},${h} '${filename}'`
-    )
+  image(operator: string, x0: number, y0: number, w: number, h: number, filename: string): this {
+    this.#primitives.push(`image ${operator} ${x0},${y0} ${w},${h} '${filename}'`)
     return this
   }
 
@@ -2788,14 +2699,7 @@ type ChannelType =
   | 'CMYK'
   | 'CMYKA'
   | number
-type GrayscaleType =
-  | 'average'
-  | 'brightness'
-  | 'lightness'
-  | 'luma'
-  | 'rec601luma'
-  | 'rec709luma'
-  | 'rms'
+type GrayscaleType = 'average' | 'brightness' | 'lightness' | 'luma' | 'rec601luma' | 'rec709luma' | 'rms'
 type EndianType = 'LSB' | 'MSB'
 type EvaluateType =
   | 'Add'
@@ -2829,14 +2733,7 @@ type EvaluateType =
   | 'Xor'
 type FunctionType = 'Polynomial' | 'Sinusoid' | 'ArcSin' | 'ArcTan'
 type IntentType = 'Absolute' | 'Perceptual' | 'Relative' | 'Saturation'
-type InterlaceType =
-  | 'Line'
-  | 'None'
-  | 'Plane'
-  | 'Partition'
-  | 'JPEG'
-  | 'GIF'
-  | 'PNG'
+type InterlaceType = 'Line' | 'None' | 'Plane' | 'Partition' | 'JPEG' | 'GIF' | 'PNG'
 type LayersType =
   | 'coalesce'
   | 'compare-any'
@@ -2853,14 +2750,7 @@ type LayersType =
   | 'optimize-trans'
   | 'remove-dups'
   | 'remove-zero'
-type LimitType =
-  | 'disk'
-  | 'file'
-  | 'map'
-  | 'memory'
-  | 'thread'
-  | 'throttle'
-  | 'time'
+type LimitType = 'disk' | 'file' | 'map' | 'memory' | 'thread' | 'throttle' | 'time'
 type MorphologyType =
   | 'Convolve'
   | 'Correlate'
@@ -2882,14 +2772,7 @@ type MorphologyType =
   | 'HitAndMiss'
   | 'Thinning'
   | 'Thicken'
-type NoiseType =
-  | 'Gaussian'
-  | 'Impulse'
-  | 'Laplacian'
-  | 'Multiplicative'
-  | 'Poisson'
-  | 'Random'
-  | 'Uniform'
+type NoiseType = 'Gaussian' | 'Impulse' | 'Laplacian' | 'Multiplicative' | 'Poisson' | 'Random' | 'Uniform'
 type OrientType =
   | 'TopLeft'
   | 'TopRight'
@@ -2968,42 +2851,11 @@ type VirtualPixelType =
   | 'VerticalTileEdge'
   | 'White'
 type DrawGravityType = Omit<GravityType, 'None' | 'Forget'>
-type IlluminantType =
-  | 'A'
-  | 'B'
-  | 'C'
-  | 'D50'
-  | 'D55'
-  | 'D65'
-  | 'D75'
-  | 'E'
-  | 'F2'
-  | 'F7'
-  | 'F11'
-type IntensityType =
-  | 'Average'
-  | 'Brightness'
-  | 'Lightness'
-  | 'Luma'
-  | 'MS'
-  | 'Rec601Luma'
-  | 'Rec709Luma'
-  | 'RMS'
+type IlluminantType = 'A' | 'B' | 'C' | 'D50' | 'D55' | 'D65' | 'D75' | 'E' | 'F2' | 'F7' | 'F11'
+type IntensityType = 'Average' | 'Brightness' | 'Lightness' | 'Luma' | 'MS' | 'Rec601Luma' | 'Rec709Luma' | 'RMS'
 type AutoThresholdType = 'OTSU' | 'Kapur' | 'Triangle'
-type SparseColorMethodType =
-  | 'Barycentric'
-  | 'Bilinear'
-  | 'Polynomial'
-  | 'Shepards'
-  | 'Voronoi'
-type ComplexOperatorType =
-  | 'Add'
-  | 'Conjugate'
-  | 'Divide'
-  | 'MagnitudePhase'
-  | 'Multiply'
-  | 'RealImaginary'
-  | 'Subtract'
+type SparseColorMethodType = 'Barycentric' | 'Bilinear' | 'Polynomial' | 'Shepards' | 'Voronoi'
+type ComplexOperatorType = 'Add' | 'Conjugate' | 'Divide' | 'MagnitudePhase' | 'Multiply' | 'RealImaginary' | 'Subtract'
 type ListType =
   | 'Color'
   | 'Configure'
