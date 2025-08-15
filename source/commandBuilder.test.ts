@@ -620,9 +620,9 @@ test('frame method', () => {
   expect(new IMCB().frame(20, 25, 8, 3).parts()).toEqual(['-frame', '20x25+8+3'])
 })
 
-test('func method', () => {
-  expect(new IMCB().func('Polynomial', '1,2,3').parts()).toEqual(['-function', 'Polynomial', '1,2,3'])
-  expect(new IMCB().func('Sinusoid', '1,0,0.5').parts()).toEqual(['-function', 'Sinusoid', '1,0,0.5'])
+test('function method', () => {
+  expect(new IMCB().function('Polynomial', 1, 2, 3).parts()).toEqual(['-function', 'Polynomial', '1,2,3'])
+  expect(new IMCB().function('Sinusoid', 1, 0, 0.5).parts()).toEqual(['-function', 'Sinusoid', '1,0,0.5'])
 })
 
 test('fuzz method', () => {

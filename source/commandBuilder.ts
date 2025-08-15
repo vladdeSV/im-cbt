@@ -136,8 +136,19 @@ class ImageMagickCommandBuilder {
   }
 
   geometry(x: number, y: number): this {
+    const geo = new Geometry().offset(x, y)
+
     this.#commands.push('-geometry')
-    this.#commands.push(this.#escape(new Geometry().offset(x, y).toString()))
+    this.#commands.push(this.#escape(geo.toString()))
+
+    return this
+  }
+
+  geometryExt(fn: (g: Geometry) => Geometry): this {
+    const geometry = fn(new Geometry())
+
+    this.#commands.push('-geometry')
+    this.#commands.push(this.#escape(geometry.toString()))
 
     return this
   }
@@ -167,6 +178,15 @@ class ImageMagickCommandBuilder {
   extent(w: number, h: number): this {
     this.#commands.push('-extent')
     this.#commands.push(this.#escape(new Geometry().size(w, h).toString()))
+
+    return this
+  }
+
+  extentExt(fn: (g: Geometry) => Geometry): this {
+    const geometry = fn(new Geometry())
+
+    this.#commands.push('-extent')
+    this.#commands.push(this.#escape(geometry.toString()))
 
     return this
   }
@@ -255,7 +275,7 @@ class ImageMagickCommandBuilder {
     this.#commands.push('-blur')
 
     if (sigma !== undefined) {
-      this.#commands.push(this.#escape(`${radius}x${sigma}`))
+      this.#commands.push(this.#escape(new Geometry().size(radius, sigma).toString()))
     } else {
       this.#commands.push(this.#escape(radius))
     }
@@ -267,7 +287,7 @@ class ImageMagickCommandBuilder {
     this.#commands.push('-sharpen')
 
     if (sigma !== undefined) {
-      this.#commands.push(this.#escape(`${radius}x${sigma}`))
+      this.#commands.push(this.#escape(new Geometry().size(radius, sigma).toString()))
     } else {
       this.#commands.push(this.#escape(radius))
     }
@@ -288,8 +308,9 @@ class ImageMagickCommandBuilder {
     return this
   }
 
+  // FIXME: i think this is suspectable to injections, if the programmer uses `exectute`, with a label that comes from the user input
   label(input: string | number): this {
-    this.#commands.push(`label:${this.#escape(input)}`)
+    this.#commands.push(this.#escape(`label:${input}`))
 
     return this
   }
@@ -912,15 +933,6 @@ class ImageMagickCommandBuilder {
     }
 
     this.#commands.push(this.#escape(frameSpec))
-
-    return this
-  }
-
-  /// -function
-  func(type: FunctionType, parameters: string): this {
-    this.#commands.push('-function')
-    this.#commands.push(this.#escape(type))
-    this.#commands.push(this.#escape(parameters))
 
     return this
   }
@@ -1702,6 +1714,14 @@ class ImageMagickCommandBuilder {
   swap(index1: number, index2: number): this {
     this.#commands.push('-swap')
     this.#commands.push(this.#escape(`${index1},${index2}`))
+
+    return this
+  }
+
+  function(name: FunctionType, ...parameters: number[]): this {
+    this.#commands.push('-function')
+    this.#commands.push(this.#escape(name))
+    this.#commands.push(parameters.map(p => this.#escape(p)).join(','))
 
     return this
   }
