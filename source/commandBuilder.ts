@@ -847,6 +847,7 @@ class ImageMagickCommandBuilder {
     return this
   }
 
+  /// -function
   func(type: FunctionType, parameters: string): this {
     this.#commands.push('-function')
     this.#commands.push(this.#escape(type))
@@ -973,17 +974,6 @@ class ImageMagickCommandBuilder {
   loop(iterations: number): this {
     this.#commands.push('-loop')
     this.#commands.push(this.#escape(iterations))
-
-    return this
-  }
-
-  map(filename?: string): this {
-    if (filename) {
-      this.#commands.push('-map')
-      this.#commands.push(this.#escape(filename))
-    } else {
-      this.#commands.push('+map')
-    }
 
     return this
   }
@@ -1150,8 +1140,8 @@ class ImageMagickCommandBuilder {
     return this
   }
 
-  radialBlur(angle: number): this {
-    this.#commands.push('-radial-blur')
+  rotationalBlur(angle: number): this {
+    this.#commands.push('-rotational-blur')
     this.#commands.push(this.#escape(angle))
 
     return this
@@ -1197,9 +1187,13 @@ class ImageMagickCommandBuilder {
     return this
   }
 
-  remap(filename: string): this {
-    this.#commands.push('-remap')
-    this.#commands.push(this.#escape(filename))
+  remap(filename?: string): this {
+    if (filename) {
+      this.#commands.push('-remap')
+      this.#commands.push(this.#escape(filename))
+    } else {
+      this.#commands.push('+remap')
+    }
 
     return this
   }
@@ -1641,10 +1635,6 @@ class ImageMagickCommandBuilder {
     this.#commands.push(this.#escape(`${index1},${index2}`))
 
     return this
-  }
-
-  sanitize(input: unknown) {
-    return this.#escape(input)
   }
 
   #escape(data: unknown): string {
