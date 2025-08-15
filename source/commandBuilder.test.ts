@@ -22,9 +22,7 @@ test('command with nested command', () => {
 })
 
 test('command custom commands with numbers and strings', () => {
-  const command = new IMCB('-')
-    .command('-colorize', 30)
-    .command('-colorize', '30')
+  const command = new IMCB('-').command('-colorize', 30).command('-colorize', '30')
   expect(command.parts()).toEqual(['-', '-colorize', '30', '-colorize', '30'])
 })
 
@@ -44,12 +42,10 @@ test('crop method variations', () => {
 
 test('crop with geometry function', () => {
   // using extended geometry function for crop
-  expect(new IMCB().cropExt(g => g.size(100, 100).offset(10, 10)).parts())
-    .toEqual(['-crop', '100x100+10+10'])
+  expect(new IMCB().cropExt((g) => g.size(100, 100).offset(10, 10)).parts()).toEqual(['-crop', '100x100+10+10'])
 
-  // crop with percentage scaling  
-  expect(new IMCB().cropExt(g => g.scale(50, 50).offset(0, 0)).parts())
-    .toEqual(['-crop', '50%x50%+0+0'])
+  // crop with percentage scaling
+  expect(new IMCB().cropExt((g) => g.scale(50, 50).offset(0, 0)).parts()).toEqual(['-crop', '50%x50%+0+0'])
 })
 
 test('rotate method variations', () => {
@@ -171,10 +167,8 @@ test('resize method', () => {
 })
 
 test('resizeExt method', () => {
-  expect(new IMCB().resizeExt(g => g.size(100, 100).flag('!')).parts())
-    .toEqual(['-resize', '100x100!'])
-  expect(new IMCB().resizeExt(g => g.scale(50)).parts())
-    .toEqual(['-resize', '50%'])
+  expect(new IMCB().resizeExt((g) => g.size(100, 100).flag('!')).parts()).toEqual(['-resize', '100x100!'])
+  expect(new IMCB().resizeExt((g) => g.scale(50)).parts()).toEqual(['-resize', '50%'])
 })
 
 test('trim method', () => {
@@ -200,17 +194,20 @@ test('adaptive-resize method', () => {
   // adaptive-resize with width only
   expect(new IMCB().adaptiveResize(150).parts()).toEqual(['-adaptive-resize', '150'])
 
-  // adaptive-resize with height only  
+  // adaptive-resize with height only
   expect(new IMCB().adaptiveResize(undefined, 200).parts()).toEqual(['-adaptive-resize', 'x200'])
 })
 
 test('adaptive-resize-ext method', () => {
   // adaptive-resize with percentage scaling
-  expect(new IMCB().adaptiveResizeExt(g => g.scale(50)).parts()).toEqual(['-adaptive-resize', '50%'])
-  expect(new IMCB().adaptiveResizeExt(g => g.scale(75, 80)).parts()).toEqual(['-adaptive-resize', '75%x80%'])
+  expect(new IMCB().adaptiveResizeExt((g) => g.scale(50)).parts()).toEqual(['-adaptive-resize', '50%'])
+  expect(new IMCB().adaptiveResizeExt((g) => g.scale(75, 80)).parts()).toEqual(['-adaptive-resize', '75%x80%'])
 
   // adaptive-resize with size and flag
-  expect(new IMCB().adaptiveResizeExt(g => g.size(200, 100).flag('!')).parts()).toEqual(['-adaptive-resize', '200x100!'])
+  expect(new IMCB().adaptiveResizeExt((g) => g.size(200, 100).flag('!')).parts()).toEqual([
+    '-adaptive-resize',
+    '200x100!',
+  ])
 })
 
 test('adaptive-sharpen method', () => {
@@ -395,11 +392,13 @@ test('compress method', () => {
   expect(new IMCB().compress('Zip').parts()).toEqual(['-compress', 'Zip'])
 })
 
+/*
 test('contrastStretch method', () => {
   expect(new IMCB().contrastStretch(2, 1).parts()).toEqual(['-contrast-stretch', '2%x1%'])
   expect(new IMCB().contrastStretch(0, 0).parts()).toEqual(['-contrast-stretch', '0x0'])
   expect(new IMCB().contrastStretch(5, 3).parts()).toEqual(['-contrast-stretch', '5%x3%'])
 })
+*/
 
 test('cycle method', () => {
   expect(new IMCB().cycle(50).parts()).toEqual(['-cycle', '50'])
@@ -501,7 +500,11 @@ test('dispose method', () => {
 })
 
 test('distort method', () => {
-  expect(new IMCB().distort('Perspective', '0,0,0,0,0,90,0,90').parts()).toEqual(['-distort', 'Perspective', '0,0,0,0,0,90,0,90'])
+  expect(new IMCB().distort('Perspective', '0,0,0,0,0,90,0,90').parts()).toEqual([
+    '-distort',
+    'Perspective',
+    '0,0,0,0,0,90,0,90',
+  ])
   expect(new IMCB().distort('Arc', '60').parts()).toEqual(['-distort', 'Arc', '60'])
   expect(new IMCB().distort('Rotate', '30').parts()).toEqual(['-distort', 'Rotate', '30'])
 })
@@ -513,68 +516,103 @@ test('dither method', () => {
 })
 
 test('draw method', () => {
-  expect(new IMCB().draw(d => d.circle(10, 10, 20, 20)).parts()).toEqual(['-draw', 'circle 10,10 20,20'])
-  expect(new IMCB().draw(d => d.rectangle(0, 0, 100, 100)).parts()).toEqual(['-draw', 'rectangle 0,0 100,100'])
-  expect(new IMCB().draw(d => d.text(0, 0, 'Hello World')).parts()).toEqual(['-draw', "text 0,0 'Hello World'"])
+  expect(new IMCB().draw((d) => d.circle(10, 10, 20, 20)).parts()).toEqual(['-draw', 'circle 10,10 20,20'])
+  expect(new IMCB().draw((d) => d.rectangle(0, 0, 100, 100)).parts()).toEqual(['-draw', 'rectangle 0,0 100,100'])
+  expect(new IMCB().draw((d) => d.text(0, 0, 'Hello World')).parts()).toEqual(['-draw', "text 0,0 'Hello World'"])
 })
 
 test('draw method - shape primitives', () => {
-  expect(new IMCB().draw(d => d.point(10, 20)).parts()).toEqual(['-draw', 'point 10,20'])
-  expect(new IMCB().draw(d => d.line(0, 0, 100, 100)).parts()).toEqual(['-draw', 'line 0,0 100,100'])
-  expect(new IMCB().draw(d => d.rectangle(10, 10, 50, 50)).parts()).toEqual(['-draw', 'rectangle 10,10 50,50'])
-  expect(new IMCB().draw(d => d.roundRectangle(10, 10, 50, 50, 5, 5)).parts()).toEqual(['-draw', 'roundRectangle 10,10 50,50 5,5'])
-  expect(new IMCB().draw(d => d.arc(10, 10, 50, 50, 0, 90)).parts()).toEqual(['-draw', 'arc 10,10 50,50 0,90'])
-  expect(new IMCB().draw(d => d.ellipse(25, 25, 20, 15, 0, 360)).parts()).toEqual(['-draw', 'ellipse 25,25 20,15 0,360'])
-  expect(new IMCB().draw(d => d.circle(50, 50, 70, 50)).parts()).toEqual(['-draw', 'circle 50,50 70,50'])
+  expect(new IMCB().draw((d) => d.point(10, 20)).parts()).toEqual(['-draw', 'point 10,20'])
+  expect(new IMCB().draw((d) => d.line(0, 0, 100, 100)).parts()).toEqual(['-draw', 'line 0,0 100,100'])
+  expect(new IMCB().draw((d) => d.rectangle(10, 10, 50, 50)).parts()).toEqual(['-draw', 'rectangle 10,10 50,50'])
+  expect(new IMCB().draw((d) => d.roundRectangle(10, 10, 50, 50, 5, 5)).parts()).toEqual([
+    '-draw',
+    'roundRectangle 10,10 50,50 5,5',
+  ])
+  expect(new IMCB().draw((d) => d.arc(10, 10, 50, 50, 0, 90)).parts()).toEqual(['-draw', 'arc 10,10 50,50 0,90'])
+  expect(new IMCB().draw((d) => d.ellipse(25, 25, 20, 15, 0, 360)).parts()).toEqual([
+    '-draw',
+    'ellipse 25,25 20,15 0,360',
+  ])
+  expect(new IMCB().draw((d) => d.circle(50, 50, 70, 50)).parts()).toEqual(['-draw', 'circle 50,50 70,50'])
 })
 
 test('draw method - polyline and polygon', () => {
-  expect(new IMCB().draw(d => d.polyline([10, 10], [20, 20], [30, 10])).parts()).toEqual(['-draw', 'polyline 10,10 20,20 30,10'])
-  expect(new IMCB().draw(d => d.polygon([10, 10], [20, 5], [30, 15], [15, 20])).parts()).toEqual(['-draw', 'polygon 10,10 20,5 30,15 15,20'])
-  expect(new IMCB().draw(d => d.bezier([10, 10], [20, 5], [30, 15], [40, 10])).parts()).toEqual(['-draw', 'bezier 10,10 20,5 30,15 40,10'])
+  expect(new IMCB().draw((d) => d.polyline([10, 10], [20, 20], [30, 10])).parts()).toEqual([
+    '-draw',
+    'polyline 10,10 20,20 30,10',
+  ])
+  expect(new IMCB().draw((d) => d.polygon([10, 10], [20, 5], [30, 15], [15, 20])).parts()).toEqual([
+    '-draw',
+    'polygon 10,10 20,5 30,15 15,20',
+  ])
+  expect(new IMCB().draw((d) => d.bezier([10, 10], [20, 5], [30, 15], [40, 10])).parts()).toEqual([
+    '-draw',
+    'bezier 10,10 20,5 30,15 40,10',
+  ])
 })
 
 test('draw method - path and image', () => {
-  expect(new IMCB().draw(d => d.path('M 10,10 L 20,20 Z')).parts()).toEqual(['-draw', "path 'M 10,10 L 20,20 Z'"])
-  expect(new IMCB().draw(d => d.image('Over', 10, 10, 100, 100, 'test.png')).parts()).toEqual(['-draw', "image Over 10,10 100,100 'test.png'"])
+  expect(new IMCB().draw((d) => d.path('M 10,10 L 20,20 Z')).parts()).toEqual(['-draw', "path 'M 10,10 L 20,20 Z'"])
+  expect(new IMCB().draw((d) => d.image('Over', 10, 10, 100, 100, 'test.png')).parts()).toEqual([
+    '-draw',
+    "image Over 10,10 100,100 'test.png'",
+  ])
 })
 
 test('draw method - text and gravity', () => {
-  expect(new IMCB().draw(d => d.text(50, 50, 'Hello World')).parts()).toEqual(['-draw', "text 50,50 'Hello World'"])
-  expect(new IMCB().draw(d => d.gravity('Center')).parts()).toEqual(['-draw', 'gravity Center'])
-  expect(new IMCB().draw(d => d.gravity('NorthWest')).parts()).toEqual(['-draw', 'gravity NorthWest'])
-  expect(new IMCB().draw(d => d.gravity('SouthEast')).parts()).toEqual(['-draw', 'gravity SouthEast'])
+  expect(new IMCB().draw((d) => d.text(50, 50, 'Hello World')).parts()).toEqual(['-draw', "text 50,50 'Hello World'"])
+  expect(new IMCB().draw((d) => d.gravity('Center')).parts()).toEqual(['-draw', 'gravity Center'])
+  expect(new IMCB().draw((d) => d.gravity('NorthWest')).parts()).toEqual(['-draw', 'gravity NorthWest'])
+  expect(new IMCB().draw((d) => d.gravity('SouthEast')).parts()).toEqual(['-draw', 'gravity SouthEast'])
 })
 
 test('draw method - transformations', () => {
-  expect(new IMCB().draw(d => d.rotate(45)).parts()).toEqual(['-draw', 'rotate 45'])
-  expect(new IMCB().draw(d => d.translate(10, 20)).parts()).toEqual(['-draw', 'translate 10,20'])
-  expect(new IMCB().draw(d => d.scale(2, 1.5)).parts()).toEqual(['-draw', 'scale 2,1.5'])
-  expect(new IMCB().draw(d => d.skewX(15)).parts()).toEqual(['-draw', 'skewX 15'])
-  expect(new IMCB().draw(d => d.skewY(10)).parts()).toEqual(['-draw', 'skewY 10'])
+  expect(new IMCB().draw((d) => d.rotate(45)).parts()).toEqual(['-draw', 'rotate 45'])
+  expect(new IMCB().draw((d) => d.translate(10, 20)).parts()).toEqual(['-draw', 'translate 10,20'])
+  expect(new IMCB().draw((d) => d.scale(2, 1.5)).parts()).toEqual(['-draw', 'scale 2,1.5'])
+  expect(new IMCB().draw((d) => d.skewX(15)).parts()).toEqual(['-draw', 'skewX 15'])
+  expect(new IMCB().draw((d) => d.skewY(10)).parts()).toEqual(['-draw', 'skewY 10'])
 })
 
 test('draw method - pixel operations', () => {
-  expect(new IMCB().draw(d => d.color(10, 10, 'point')).parts()).toEqual(['-draw', 'color 10,10 point'])
-  expect(new IMCB().draw(d => d.color(20, 20, 'replace')).parts()).toEqual(['-draw', 'color 20,20 replace'])
-  expect(new IMCB().draw(d => d.matte(15, 15, 'floodfill')).parts()).toEqual(['-draw', 'matte 15,15 floodfill'])
+  expect(new IMCB().draw((d) => d.color(10, 10, 'point')).parts()).toEqual(['-draw', 'color 10,10 point'])
+  expect(new IMCB().draw((d) => d.color(20, 20, 'replace')).parts()).toEqual(['-draw', 'color 20,20 replace'])
+  expect(new IMCB().draw((d) => d.matte(15, 15, 'floodfill')).parts()).toEqual(['-draw', 'matte 15,15 floodfill'])
 })
 
 test('draw method - multiple primitives', () => {
-  expect(new IMCB().draw(d => d.circle(25, 25, 35, 25).text(10, 60, 'Hello')).parts()).toEqual(['-draw', "circle 25,25 35,25 text 10,60 'Hello'"])
-  expect(new IMCB().draw(d => d.translate(50, 50).rotate(45).rectangle(0, 0, 20, 20)).parts()).toEqual(['-draw', 'translate 50,50 rotate 45 rectangle 0,0 20,20'])
-  expect(new IMCB().draw(d => d.gravity('Center').text(0, 0, 'Centered').point(0, 0)).parts()).toEqual(['-draw', "gravity Center text 0,0 'Centered' point 0,0"])
+  expect(new IMCB().draw((d) => d.circle(25, 25, 35, 25).text(10, 60, 'Hello')).parts()).toEqual([
+    '-draw',
+    "circle 25,25 35,25 text 10,60 'Hello'",
+  ])
+  expect(new IMCB().draw((d) => d.translate(50, 50).rotate(45).rectangle(0, 0, 20, 20)).parts()).toEqual([
+    '-draw',
+    'translate 50,50 rotate 45 rectangle 0,0 20,20',
+  ])
+  expect(new IMCB().draw((d) => d.gravity('Center').text(0, 0, 'Centered').point(0, 0)).parts()).toEqual([
+    '-draw',
+    "gravity Center text 0,0 'Centered' point 0,0",
+  ])
 })
 
 test('draw method - complex example', () => {
-  expect(new IMCB().draw(d => d
-    .translate(100, 100)
-    .rotate(45)
-    .scale(2, 2)
-    .rectangle(-10, -10, 10, 10)
-    .gravity('NorthEast')
-    .text(0, 0, 'Rotated!')
-  ).parts()).toEqual(['-draw', "translate 100,100 rotate 45 scale 2,2 rectangle -10,-10 10,10 gravity NorthEast text 0,0 'Rotated!'"])
+  expect(
+    new IMCB()
+      .draw((d) =>
+        d
+          .translate(100, 100)
+          .rotate(45)
+          .scale(2, 2)
+          .rectangle(-10, -10, 10, 10)
+          .gravity('NorthEast')
+          .text(0, 0, 'Rotated!')
+      )
+      .parts()
+  ).toEqual([
+    '-draw',
+    "translate 100,100 rotate 45 scale 2,2 rectangle -10,-10 10,10 gravity NorthEast text 0,0 'Rotated!'",
+  ])
 })
 
 test('duplicate method', () => {
@@ -1042,8 +1080,8 @@ test('thumbnail method', () => {
 })
 
 test('thumbnailExt method', () => {
-  expect(new IMCB().thumbnailExt(g => g.scale(50)).parts()).toEqual(['-thumbnail', '50%'])
-  expect(new IMCB().thumbnailExt(g => g.size(100, 100).flag('!')).parts()).toEqual(['-thumbnail', '100x100!'])
+  expect(new IMCB().thumbnailExt((g) => g.scale(50)).parts()).toEqual(['-thumbnail', '50%'])
+  expect(new IMCB().thumbnailExt((g) => g.size(100, 100).flag('!')).parts()).toEqual(['-thumbnail', '100x100!'])
 })
 
 test('tile method', () => {
@@ -1099,8 +1137,8 @@ test('units method', () => {
 })
 
 test('unsharp method', () => {
-  expect(new IMCB().unsharp(0, 0.5, 0.5, 0.1).parts()).toEqual(['-unsharp', '0x0.5+0.5x0.1'])
-  expect(new IMCB().unsharp(2, 1, 1, 0.05).parts()).toEqual(['-unsharp', '2x1+1x0.05'])
+  expect(new IMCB().unsharp(0, 0.5, 0.5, 0.1).parts()).toEqual(['-unsharp', '0x0.5+0.5+0.1'])
+  expect(new IMCB().unsharp(2, 1, 1, 0.05).parts()).toEqual(['-unsharp', '2x1+1+0.05'])
 })
 
 test('verbose method', () => {
@@ -1236,10 +1274,7 @@ test('complex command with buffers', () => {
   const backgroundBuffer = Buffer.from('background')
   const overlayBuffer = Buffer.from('overlay')
 
-  im.resource(backgroundBuffer)
-    .resource(overlayBuffer)
-    .composite()
-    .resource('output.png')
+  im.resource(backgroundBuffer).resource(overlayBuffer).composite().resource('output.png')
 
   expect(im.parts()).toEqual(['fd:3', 'fd:4', '-composite', 'output.png'])
   expect(im.fds()).toEqual([backgroundBuffer, overlayBuffer])

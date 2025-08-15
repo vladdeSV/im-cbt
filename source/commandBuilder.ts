@@ -698,12 +698,14 @@ class ImageMagickCommandBuilder {
     return this
   }
 
+  /* FIXME: add this method, while supporting passing in both numbers and/or percentages
   contrastStretch(blackPoint: number, whitePoint: number): this {
     this.#commands.push('-contrast-stretch')
     this.#commands.push(`${blackPoint}%x${whitePoint}%`)
 
     return this
   }
+  */
 
   cycle(amount: number): this {
     this.#commands.push('-cycle')
