@@ -9,17 +9,6 @@ class ImageMagickCommandBuilder {
     }
   }
 
-  clone(...indexes: number[]): ImageMagickCommandBuilder {
-    if (indexes.length > 0) {
-      this.#commands.push('-clone')
-      this.#commands.push(indexes.map(idx => this.#escape(idx)).join(','))
-    } else {
-      this.#commands.push('+clone')
-    }
-
-    return this
-  }
-
   parts(): string[] {
     const a: string[] = []
     this.#commands.forEach(part => part instanceof ImageMagickCommandBuilder ? a.push(...part.parts()) : a.push(part))
@@ -90,6 +79,17 @@ class ImageMagickCommandBuilder {
     } else {
       this.#commands.push('-size')
       this.#commands.push(this.#escape(new Geometry().size(w, h).toString()))
+    }
+
+    return this
+  }
+
+  clone(...indexes: number[]): ImageMagickCommandBuilder {
+    if (indexes.length > 0) {
+      this.#commands.push('-clone')
+      this.#commands.push(indexes.map(idx => this.#escape(idx)).join(','))
+    } else {
+      this.#commands.push('+clone')
     }
 
     return this
