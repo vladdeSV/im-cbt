@@ -1718,10 +1718,581 @@ class ImageMagickCommandBuilder {
     return this
   }
 
+  attenuate(value: number): this {
+    this.#commands.push('-attenuate')
+    this.#commands.push(this.#escape(value))
+
+    return this
+  }
+
+  bluePrimary(x: number, y: number): this {
+    this.#commands.push('-blue-primary')
+    this.#commands.push(this.#escape(`${x},${y}`))
+
+    return this
+  }
+
+  caption(text: string): this {
+    this.#commands.push('-caption')
+    this.#commands.push(this.#escape(text))
+
+    return this
+  }
+
+  clip(): this {
+    this.#commands.push('-clip')
+
+    return this
+  }
+
+  clipMask(filename: string): this {
+    this.#commands.push('-clip-mask')
+    this.#commands.push(this.#escape(filename))
+
+    return this
+  }
+
+  clipPath(id: string): this {
+    this.#commands.push('-clip-path')
+    this.#commands.push(this.#escape(id))
+
+    return this
+  }
+
+  comment(text: string): this {
+    this.#commands.push('-comment')
+    this.#commands.push(this.#escape(text))
+
+    return this
+  }
+
+  features(distance: number): this {
+    this.#commands.push('-features')
+    this.#commands.push(this.#escape(distance))
+
+    return this
+  }
+
+  greenPrimary(x: number, y: number): this {
+    this.#commands.push('-green-primary')
+    this.#commands.push(this.#escape(`${x},${y}`))
+
+    return this
+  }
+
+  illuminant(type: IlluminantType): this {
+    this.#commands.push('-illuminant')
+    this.#commands.push(this.#escape(type))
+
+    return this
+  }
+
+  intensity(method: IntensityType): this {
+    this.#commands.push('-intensity')
+    this.#commands.push(this.#escape(method))
+
+    return this
+  }
+
+  interlineSpacing(value: number): this {
+    this.#commands.push('-interline-spacing')
+    this.#commands.push(this.#escape(value))
+
+    return this
+  }
+
+  interwordSpacing(value: number): this {
+    this.#commands.push('-interword-spacing')
+    this.#commands.push(this.#escape(value))
+
+    return this
+  }
+
+  matte(): this {
+    this.#commands.push('-matte')
+
+    return this
+  }
+
+  moments(): this {
+    this.#commands.push('-moments')
+
+    return this
+  }
+
+  precision(value: number): this {
+    this.#commands.push('-precision')
+    this.#commands.push(this.#escape(value))
+
+    return this
+  }
+
+  readMask(filename: string): this {
+    this.#commands.push('-read-mask')
+    this.#commands.push(this.#escape(filename))
+
+    return this
+  }
+
+  respectParentheses(): this {
+    this.#commands.push('-respect-parentheses')
+
+    return this
+  }
+
+  support(factor: number): this {
+    this.#commands.push('-support')
+    this.#commands.push(this.#escape(factor))
+
+    return this
+  }
+
+  synchronize(): this {
+    this.#commands.push('-synchronize')
+
+    return this
+  }
+
+  taint(): this {
+    this.#commands.push('-taint')
+
+    return this
+  }
+
+  tileOffset(offsetX: number, offsetY: number): this {
+    this.#commands.push('-tile-offset')
+    this.#commands.push(this.#escape(`${offsetX >= 0 ? '+' : ''}${offsetX}${offsetY >= 0 ? '+' : ''}${offsetY}`))
+
+    return this
+  }
+
+  transparentColor(color: string): this {
+    this.#commands.push('-transparent-color')
+    this.#commands.push(this.#escape(color))
+
+    return this
+  }
+
+  view(): this {
+    this.#commands.push('-view')
+
+    return this
+  }
+
+  writeMask(filename: string): this {
+    this.#commands.push('-write-mask')
+    this.#commands.push(this.#escape(filename))
+
+    return this
+  }
+
+  autoThreshold(method: AutoThresholdType): this {
+    this.#commands.push('-auto-threshold')
+    this.#commands.push(this.#escape(method))
+
+    return this
+  }
+
+  bench(iterations: number): this {
+    this.#commands.push('-bench')
+    this.#commands.push(this.#escape(iterations))
+
+    return this
+  }
+
+  bilateralBlur(radius: number, sigma: number): this {
+    this.#commands.push('-bilateral-blur')
+    this.#commands.push(this.#escape(`${radius}x${sigma}`))
+
+    return this
+  }
+
+  blueShift(factor: number): this {
+    this.#commands.push('-blue-shift')
+    this.#commands.push(this.#escape(factor))
+
+    return this
+  }
+
+  canny(low: number, high: number): this {
+    this.#commands.push('-canny')
+    this.#commands.push(this.#escape(`${low}x${high}`))
+
+    return this
+  }
+
+  cannyExt(low: number, high: number, radius: number, sigma: number): this {
+    this.#commands.push('-canny')
+    this.#commands.push(this.#escape(`${low}x${high}+${radius}+${sigma}`))
+
+    return this
+  }
+
+  cdl(filename: string): this {
+    this.#commands.push('-cdl')
+    this.#commands.push(this.#escape(filename))
+
+    return this
+  }
+
+  clahe(width: number, height: number): this {
+    this.#commands.push('-clahe')
+    this.#commands.push(this.#escape(`${width}x${height}`))
+
+    return this
+  }
+
+  claheExt(width: number, height: number, tiles: number, limit: number): this {
+    this.#commands.push('-clahe')
+    this.#commands.push(this.#escape(`${width}x${height}+${tiles}+${limit}`))
+
+    return this
+  }
+
+  clamp(): this {
+    this.#commands.push('-clamp')
+
+    return this
+  }
+
+  colorMatrix(matrix: string): this {
+    this.#commands.push('-color-matrix')
+    this.#commands.push(this.#escape(matrix))
+
+    return this
+  }
+
+  colors(value: number): this {
+    this.#commands.push('-colors')
+    this.#commands.push(this.#escape(value))
+
+    return this
+  }
+
+  connectedComponents(connectivity: number): this {
+    this.#commands.push('-connected-components')
+    this.#commands.push(this.#escape(connectivity))
+
+    return this
+  }
+
+  decipher(filename: string): this {
+    this.#commands.push('-decipher')
+    this.#commands.push(this.#escape(filename))
+
+    return this
+  }
+
+  deskew(threshold: number): this {
+    this.#commands.push('-deskew')
+    this.#commands.push(this.#escape(`${threshold}%`))
+
+    return this
+  }
+
+  encipher(filename: string): this {
+    this.#commands.push('-encipher')
+    this.#commands.push(this.#escape(filename))
+
+    return this
+  }
+
+  fft(): this {
+    this.#commands.push('-fft')
+
+    return this
+  }
+
+  floodfill(x: number, y: number, color: string): this {
+    this.#commands.push('-floodfill')
+
+    const xSign = x >= 0 ? '+' : '-'
+    const ySign = y >= 0 ? '+' : '-'
+
+    const xAbs = Math.abs(x)
+    const yAbs = Math.abs(y)
+
+    this.#commands.push(this.#escape(`${xSign}${xAbs}${ySign}${yAbs}`))
+    this.#commands.push(this.#escape(color))
+
+
+    return this
+  }
+
   function(name: FunctionType, ...parameters: number[]): this {
     this.#commands.push('-function')
     this.#commands.push(this.#escape(name))
     this.#commands.push(parameters.map(p => this.#escape(p)).join(','))
+
+    return this
+  }
+
+  houghLines(width: number, height: number, threshold?: number): this {
+    let command = `${width}x${height}`
+    if (threshold !== undefined) {
+      command += `+${threshold}`
+    }
+
+    this.#commands.push('-hough-lines')
+    this.#commands.push(this.#escape(command))
+
+    return this
+  }
+
+  ift(): this {
+    this.#commands.push('-ift')
+
+    return this
+  }
+
+  integral(): this {
+    this.#commands.push('-integral')
+
+    return this
+  }
+
+  interpolativeResize(width: number, height?: number): this {
+    this.#commands.push('-interpolative-resize')
+
+    if (height !== undefined) {
+      this.#commands.push(this.#escape(`${width}x${height}`))
+    } else {
+      this.#commands.push(this.#escape(width))
+    }
+
+    return this
+  }
+
+  kmeans(colors: number, iterations: number, tolerance: number): this {
+    this.#commands.push('-kmeans')
+    this.#commands.push(this.#escape(`${colors}x${iterations}+${tolerance}`))
+
+    return this
+  }
+
+  kuwahara(radius: number, sigma?: number): this {
+    this.#commands.push('-kuwahara')
+
+    if (sigma !== undefined) {
+      this.#commands.push(this.#escape(`${radius}x${sigma}`))
+    } else {
+      this.#commands.push(this.#escape(radius))
+    }
+
+    return this
+  }
+
+  levelColors(blackColor: string, whiteColor: string): this {
+    this.#commands.push('-level-colors')
+    this.#commands.push(this.#escape(`${blackColor},${whiteColor}`))
+
+    return this
+  }
+
+  localContrast(radius: number, strength: number): this {
+    this.#commands.push('-local-contrast')
+    this.#commands.push(this.#escape(`${radius}x${strength}`))
+
+    return this
+  }
+
+  meanShift(width: number, height: number, distance: number): this {
+    this.#commands.push('-mean-shift')
+    this.#commands.push(this.#escape(`${width}x${height}+${distance}`))
+
+    return this
+  }
+
+  mode(width: number, height?: number): this {
+    this.#commands.push('-mode')
+
+    if (height !== undefined) {
+      this.#commands.push(this.#escape(`${width}x${height}`))
+    } else {
+      this.#commands.push(this.#escape(width))
+    }
+
+    return this
+  }
+
+  perceptible(epsilon: number): this {
+    this.#commands.push('-perceptible')
+    this.#commands.push(this.#escape(epsilon))
+
+    return this
+  }
+
+  rangeThreshold(low: number, high: number): this {
+    this.#commands.push('-range-threshold')
+    this.#commands.push(this.#escape(`${low},${high}`))
+
+    return this
+  }
+
+  region(width: number, height: number): this {
+    this.#commands.push('-region')
+    this.#commands.push(this.#escape(`${width}x${height}`))
+
+    return this
+  }
+
+  regionExt(width: number, height: number, x: number, y: number): this {
+    this.#commands.push('-region')
+    this.#commands.push(this.#escape(`${width}x${height}${x >= 0 ? '+' : ''}${x}${y >= 0 ? '+' : ''}${y}`))
+
+    return this
+  }
+
+  reshape(width: number, height: number): this {
+    this.#commands.push('-reshape')
+    this.#commands.push(this.#escape(`${width}x${height}`))
+
+    return this
+  }
+
+  sortPixels(): this {
+    this.#commands.push('-sort-pixels')
+
+    return this
+  }
+
+  sparseColor(method: SparseColorMethodType, ...points: string[]): this {
+    this.#commands.push('-sparse-color')
+    this.#commands.push(this.#escape(method))
+    this.#commands.push(this.#escape(points.join(' ')))
+
+    return this
+  }
+
+  waveletDenoise(threshold: number): this {
+    this.#commands.push('-wavelet-denoise')
+    this.#commands.push(this.#escape(`${threshold}%`))
+
+    return this
+  }
+
+  whiteBalance(): this {
+    this.#commands.push('-white-balance')
+
+    return this
+  }
+
+  channelFx(expression: string): this {
+    this.#commands.push('-channel-fx')
+    this.#commands.push(this.#escape(expression))
+
+    return this
+  }
+
+  clut(): this {
+    this.#commands.push('-clut')
+
+    return this
+  }
+
+  coalesce(): this {
+    this.#commands.push('-coalesce')
+
+    return this
+  }
+
+  combine(): this {
+    this.#commands.push('-combine')
+
+    return this
+  }
+
+  compare(): this {
+    this.#commands.push('-compare')
+
+    return this
+  }
+
+  complex(operator: ComplexOperatorType): this {
+    this.#commands.push('-complex')
+    this.#commands.push(this.#escape(operator))
+
+    return this
+  }
+
+  copy(width: number, height: number, sourceX: number, sourceY: number, destX: number, destY: number): this {
+    this.#commands.push('-copy')
+    this.#commands.push(this.#escape(`${width}x${height}${sourceX >= 0 ? '+' : ''}${sourceX}${sourceY >= 0 ? '+' : ''}${sourceY}`))
+    this.#commands.push(this.#escape(`${destX >= 0 ? '+' : ''}${destX}${destY >= 0 ? '+' : ''}${destY}`))
+
+    return this
+  }
+
+  deconstruct(): this {
+    this.#commands.push('-deconstruct')
+
+    return this
+  }
+
+  evaluateSequence(operator: EvaluateType): this {
+    this.#commands.push('-evaluate-sequence')
+    this.#commands.push(this.#escape(operator))
+
+    return this
+  }
+
+  haldClut(): this {
+    this.#commands.push('-hald-clut')
+
+    return this
+  }
+
+  morph(value: number): this {
+    this.#commands.push('-morph')
+    this.#commands.push(this.#escape(value))
+
+    return this
+  }
+
+  poly(...terms: number[]): this {
+    this.#commands.push('-poly')
+    this.#commands.push(this.#escape(terms.join(',')))
+
+    return this
+  }
+
+  process(...args: string[]): this {
+    this.#commands.push('-process')
+    this.#commands.push(this.#escape(args.join(' ')))
+
+    return this
+  }
+
+  delete(...indexes: number[]): this {
+    this.#commands.push('-delete')
+    this.#commands.push(this.#escape(indexes.join(',')))
+
+    return this
+  }
+
+  distributeCache(port: number): this {
+    this.#commands.push('-distribute-cache')
+    this.#commands.push(this.#escape(port))
+
+    return this
+  }
+
+  list(type: ListType): this {
+    this.#commands.push('-list')
+    this.#commands.push(this.#escape(type))
+
+    return this
+  }
+
+  log(format: string): this {
+    this.#commands.push('-log')
+    this.#commands.push(this.#escape(format))
+
+    return this
+  }
+
+  usage(): this {
+    this.#commands.push('-usage')
 
     return this
   }
@@ -1731,7 +2302,6 @@ class ImageMagickCommandBuilder {
 
     return input
 
-    // TODO: Enable proper escaping when needed
     // if single safe word, return it
     // if (input.match(/^[\w+-]+$/)) {
     //   return input
@@ -1890,3 +2460,9 @@ type StretchType = 'Any' | 'Condensed' | 'Expanded' | 'ExtraCondensed' | 'ExtraE
 type StyleType = 'Any' | 'Italic' | 'Normal' | 'Oblique'
 type VirtualPixelType = 'Background' | 'Black' | 'CheckerTile' | 'Dither' | 'Edge' | 'Gray' | 'HorizontalTile' | 'HorizontalTileEdge' | 'Mirror' | 'None' | 'Random' | 'Tile' | 'Transparent' | 'VerticalTile' | 'VerticalTileEdge' | 'White'
 type DrawGravityType = Omit<GravityType, 'None' | 'Forget'>
+type IlluminantType = 'A' | 'B' | 'C' | 'D50' | 'D55' | 'D65' | 'D75' | 'E' | 'F2' | 'F7' | 'F11'
+type IntensityType = 'Average' | 'Brightness' | 'Lightness' | 'Luma' | 'MS' | 'Rec601Luma' | 'Rec709Luma' | 'RMS'
+type AutoThresholdType = 'OTSU' | 'Kapur' | 'Triangle'
+type SparseColorMethodType = 'Barycentric' | 'Bilinear' | 'Polynomial' | 'Shepards' | 'Voronoi'
+type ComplexOperatorType = 'Add' | 'Conjugate' | 'Divide' | 'MagnitudePhase' | 'Multiply' | 'RealImaginary' | 'Subtract'
+type ListType = 'Color' | 'Configure' | 'Delegate' | 'Font' | 'Format' | 'Locale' | 'Log' | 'Magic' | 'Module' | 'Policy' | 'Resource' | 'Threshold' | 'Type'
