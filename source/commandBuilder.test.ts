@@ -1149,6 +1149,31 @@ test('swap method', () => {
   expect(new IMCB().swap(1, 4).parts()).toEqual(['-swap', '1,4'])
 })
 
+test('xc method variations', () => {
+  expect(new IMCB().xc().parts()).toEqual(['xc:'])
+  expect(new IMCB().xc('red').parts()).toEqual(['xc:red'])
+  expect(new IMCB().xc('red', 200).parts()).toEqual(['xc:red[200]'])
+  expect(new IMCB().xc('red', 200, 100).parts()).toEqual(['xc:red[200x100!]'])
+  expect(new IMCB().xc(150).parts()).toEqual(['xc:[150]'])
+  expect(new IMCB().xc(300, 200).parts()).toEqual(['xc:[300x200!]'])
+  expect(new IMCB().xc('#FF0000').parts()).toEqual(['xc:#FF0000'])
+  expect(new IMCB().xc('#FF0000', 100).parts()).toEqual(['xc:#FF0000[100]'])
+  expect(new IMCB().xc('#FF0000', 100, 200).parts()).toEqual(['xc:#FF0000[100x200!]'])
+  expect(new IMCB().xc('blue').parts()).toEqual(['xc:blue'])
+  expect(new IMCB().xc('none').parts()).toEqual(['xc:none'])
+  expect(new IMCB().xc('white', 50).parts()).toEqual(['xc:white[50]'])
+})
+
+test('canvas method (alias for xc)', () => {
+  // canvas is exactly like xc but output canvas: prefix
+  expect(new IMCB().canvas().parts()).toEqual(['canvas:'])
+  expect(new IMCB().canvas('red').parts()).toEqual(['canvas:red'])
+  expect(new IMCB().canvas('red', 200).parts()).toEqual(['canvas:red[200]'])
+  expect(new IMCB().canvas('red', 200, 100).parts()).toEqual(['canvas:red[200x100!]'])
+  expect(new IMCB().canvas(150).parts()).toEqual(['canvas:[150]'])
+  expect(new IMCB().canvas(300, 200).parts()).toEqual(['canvas:[300x200!]'])
+})
+
 test('resource method with string', () => {
   const im = new IMCB()
 

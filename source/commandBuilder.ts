@@ -41,6 +41,75 @@ class ImageMagickCommandBuilder {
     return this
   }
 
+  xc(): this
+  xc(color: string): this
+  xc(size: number): this
+  xc(width: number, height: number): this
+  xc(color: string, size: number): this
+  xc(color: string, width: number, height: number): this
+  xc(colorOrWidth?: string | number | undefined, widthOrHeight?: number, height?: number): this {
+    return this.#canvas('xc', colorOrWidth, widthOrHeight, height)
+  }
+
+  canvas(): this
+  canvas(color: string): this
+  canvas(size: number): this
+  canvas(width: number, height: number): this
+  canvas(color: string, size: number): this
+  canvas(color: string, width: number, height: number): this
+  canvas(colorOrWidth?: string | number | undefined, widthOrHeight?: number, height?: number): this {
+    return this.#canvas('canvas', colorOrWidth, widthOrHeight, height)
+  }
+
+  #canvas(methodName: string, colorOrWidth?: string | number | undefined, widthOrHeight?: number, height?: number): this {
+    let output = `${methodName}:`
+    let color: string | undefined
+    let width: number | undefined
+    let finalHeight: number | undefined
+
+    if (typeof colorOrWidth === 'string') {
+      // color and dimensions
+      color = colorOrWidth
+      width = widthOrHeight
+      finalHeight = height
+    } else if (typeof colorOrWidth === 'number') {
+      // no color, only dimensions
+      color = undefined
+      width = colorOrWidth
+      finalHeight = widthOrHeight
+    } else {
+      // empty
+      color = colorOrWidth
+      width = widthOrHeight
+      finalHeight = height
+    }
+
+    if (color) {
+      output += color
+    }
+
+    const sizeParts: number[] = []
+    if (width) {
+      sizeParts.push(width)
+    }
+    if (finalHeight) {
+      sizeParts.push(finalHeight)
+    }
+
+    if (sizeParts.length > 0) {
+      output += '['
+      output += sizeParts.join('x')
+      if (sizeParts.length == 2) {
+        output += '!'
+      }
+      output += ']'
+    }
+
+    this.#commands.push(this.#escape(output))
+
+    return this
+  }
+
   parens(im: this): this {
     this.#commands.push('(')
     this.#commands.push(im)
