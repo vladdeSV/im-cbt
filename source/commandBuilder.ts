@@ -11,11 +11,15 @@ class ImageMagickCommandBuilder {
 
   parts(): string[] {
     const a: string[] = []
-    this.#commands.forEach((part) =>
-      part instanceof ImageMagickCommandBuilder
-        ? a.push(...part.parts())
-        : a.push(String(part))
-    )
+    for (const part of this.#commands) {
+      if (part instanceof ImageMagickCommandBuilder) {
+        a.push(...part.parts())
+      } else if (part instanceof Geometry) {
+        a.push(part.toString())
+      } else {
+        a.push(String(part))
+      }
+    }
 
     return a
   }
@@ -153,10 +157,10 @@ class ImageMagickCommandBuilder {
   }
 
   geometry(x: number, y: number): this {
-    const geo = new Geometry().offset(x, y)
+    const geometry = new Geometry().offset(x, y)
 
     this.#commands.push('-geometry')
-    this.#commands.push(geo.toString())
+    this.#commands.push(geometry)
 
     return this
   }
@@ -165,7 +169,7 @@ class ImageMagickCommandBuilder {
     const geometry = fn(new Geometry())
 
     this.#commands.push('-geometry')
-    this.#commands.push(geometry.toString())
+    this.#commands.push(geometry)
 
     return this
   }
@@ -175,7 +179,7 @@ class ImageMagickCommandBuilder {
       this.#commands.push('+size')
     } else {
       this.#commands.push('-size')
-      this.#commands.push(new Geometry().size(w, h).toString())
+      this.#commands.push(new Geometry().size(w, h))
     }
 
     return this
@@ -194,7 +198,7 @@ class ImageMagickCommandBuilder {
 
   extent(w: number, h: number): this {
     this.#commands.push('-extent')
-    this.#commands.push(new Geometry().size(w, h).toString())
+    this.#commands.push(new Geometry().size(w, h))
 
     return this
   }
@@ -203,7 +207,7 @@ class ImageMagickCommandBuilder {
     const geometry = fn(new Geometry())
 
     this.#commands.push('-extent')
-    this.#commands.push(geometry.toString())
+    this.#commands.push(geometry)
 
     return this
   }
@@ -213,7 +217,7 @@ class ImageMagickCommandBuilder {
       // todo: noop?
     } else {
       this.#commands.push('-resize')
-      this.#commands.push(new Geometry().size(w, h).toString())
+      this.#commands.push(new Geometry().size(w, h))
     }
 
     return this
@@ -223,7 +227,7 @@ class ImageMagickCommandBuilder {
     const geometry = fn(new Geometry())
 
     this.#commands.push('-resize')
-    this.#commands.push(geometry.toString())
+    this.#commands.push(geometry)
 
     return this
   }
@@ -236,7 +240,7 @@ class ImageMagickCommandBuilder {
       geometry.offset(x, y)
     }
 
-    this.#commands.push(geometry.toString())
+    this.#commands.push(geometry)
 
     return this
   }
@@ -245,7 +249,7 @@ class ImageMagickCommandBuilder {
     const geometry = fn(new Geometry())
 
     this.#commands.push('-crop')
-    this.#commands.push(geometry.toString())
+    this.#commands.push(geometry)
 
     return this
   }
@@ -292,7 +296,7 @@ class ImageMagickCommandBuilder {
     this.#commands.push('-blur')
 
     if (sigma !== undefined) {
-      this.#commands.push(new Geometry().size(radius, sigma).toString())
+      this.#commands.push(new Geometry().size(radius, sigma))
     } else {
       this.#commands.push(radius)
     }
@@ -304,7 +308,7 @@ class ImageMagickCommandBuilder {
     this.#commands.push('-sharpen')
 
     if (sigma !== undefined) {
-      this.#commands.push(new Geometry().size(radius, sigma).toString())
+      this.#commands.push(new Geometry().size(radius, sigma))
     } else {
       this.#commands.push(radius)
     }
@@ -407,7 +411,7 @@ class ImageMagickCommandBuilder {
   adaptiveResize(w?: number, h?: number): this {
     if (w || h) {
       this.#commands.push('-adaptive-resize')
-      this.#commands.push(new Geometry().size(w, h).toString())
+      this.#commands.push(new Geometry().size(w, h))
     }
 
     return this
@@ -417,7 +421,7 @@ class ImageMagickCommandBuilder {
     const geometry = fn(new Geometry())
 
     this.#commands.push('-adaptive-resize')
-    this.#commands.push(geometry.toString())
+    this.#commands.push(geometry)
 
     return this
   }
@@ -565,7 +569,7 @@ class ImageMagickCommandBuilder {
     this.#commands.push('-border')
 
     if (height !== undefined) {
-      this.#commands.push(new Geometry().size(width, height).toString())
+      this.#commands.push(new Geometry().size(width, height))
     } else {
       this.#commands.push(width)
     }
@@ -602,7 +606,7 @@ class ImageMagickCommandBuilder {
     this.#commands.push('-density')
 
     if (y !== undefined) {
-      this.#commands.push(new Geometry().size(x, y).toString())
+      this.#commands.push(new Geometry().size(x, y))
     } else {
       this.#commands.push(x)
     }
@@ -697,7 +701,7 @@ class ImageMagickCommandBuilder {
       geometry.offset(x, y)
     }
 
-    this.#commands.push(geometry.toString())
+    this.#commands.push(geometry)
 
     return this
   }
@@ -1269,7 +1273,7 @@ class ImageMagickCommandBuilder {
     }
 
     if (height !== undefined) {
-      this.#commands.push(new Geometry().size(width, height).toString())
+      this.#commands.push(new Geometry().size(width, height))
     } else {
       this.#commands.push(width)
     }
@@ -1442,7 +1446,7 @@ class ImageMagickCommandBuilder {
 
   shave(width: number, height: number): this {
     this.#commands.push('-shave')
-    this.#commands.push(new Geometry().size(width, height).toString())
+    this.#commands.push(new Geometry().size(width, height))
 
     return this
   }
@@ -1497,7 +1501,7 @@ class ImageMagickCommandBuilder {
   splice(width: number, height: number, x: number, y: number): this {
     this.#commands.push('-splice')
     this.#commands.push(
-      new Geometry().size(width, height).offset(x, y).toString()
+      new Geometry().size(width, height).offset(x, y)
     )
 
     return this
@@ -1581,7 +1585,7 @@ class ImageMagickCommandBuilder {
   thumbnail(w?: number, h?: number): this {
     if (w || h) {
       this.#commands.push('-thumbnail')
-      this.#commands.push(new Geometry().size(w, h).toString())
+      this.#commands.push(new Geometry().size(w, h))
     }
 
     return this
@@ -1591,7 +1595,7 @@ class ImageMagickCommandBuilder {
     const geometry = fn(new Geometry())
 
     this.#commands.push('-thumbnail')
-    this.#commands.push(geometry.toString())
+    this.#commands.push(geometry)
 
     return this
   }
@@ -1905,7 +1909,7 @@ class ImageMagickCommandBuilder {
 
   tileOffset(x: number, y: number): this {
     this.#commands.push('-tile-offset')
-    this.#commands.push(new Geometry().offset(x, y).toString())
+    this.#commands.push(new Geometry().offset(x, y))
 
     return this
   }
@@ -2049,7 +2053,7 @@ class ImageMagickCommandBuilder {
 
   floodfill(x: number, y: number, color: string): this {
     this.#commands.push('-floodfill')
-    this.#commands.push(new Geometry().offset(x, y).toString())
+    this.#commands.push(new Geometry().offset(x, y))
     this.#commands.push(color)
 
     return this
@@ -2174,21 +2178,21 @@ class ImageMagickCommandBuilder {
 
   regionExt(fn: (g: Geometry) => Geometry): this {
     this.#commands.push('-region')
-    this.#commands.push(fn(new Geometry()).toString())
+    this.#commands.push(fn(new Geometry()))
 
     return this
   }
 
   reshape(width: number, height: number): this {
     this.#commands.push('-reshape')
-    this.#commands.push(new Geometry().size(width, height).toString())
+    this.#commands.push(new Geometry().size(width, height))
 
     return this
   }
 
   reshapeExt(fn: (g: Geometry) => Geometry): this {
     this.#commands.push('-reshape')
-    this.#commands.push(fn(new Geometry()).toString())
+    this.#commands.push(fn(new Geometry()))
 
     return this
   }
@@ -2269,11 +2273,16 @@ class ImageMagickCommandBuilder {
     this.#commands.push('-copy')
     this.#commands.push(
       // `${width}x${height}${sourceX >= 0 ? '+' : ''}${sourceX}${sourceY >= 0 ? '+' : ''}${sourceY}`
-      new Geometry().size(width, height).offset(sourceX, sourceY).toString()
+      new Geometry()
+        .size(width, height)
+        .offset(sourceX, sourceY)
+
     )
     this.#commands.push(
       //`${destX >= 0 ? '+' : ''}${destX}${destY >= 0 ? '+' : ''}${destY}`
-      new Geometry().offset(destX, destY).toString()
+      new Geometry()
+        .offset(destX, destY)
+
     )
 
     return this
@@ -2366,7 +2375,7 @@ class ImageMagickCommandBuilder {
     // return `'${input.replace(/\\/g, '\\\\').replace(/'/, '\\\'')}'`
   }
 
-  #commands: (string | number | ImageMagickCommandBuilder)[] = []
+  #commands: (string | number | Geometry | ImageMagickCommandBuilder)[] = []
   #buffers: Buffer[] = []
 }
 
