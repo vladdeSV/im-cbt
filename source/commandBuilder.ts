@@ -2393,7 +2393,7 @@ class DrawBuilder {
     return this
   }
 
-  gravity(direction: DrawGravityType): this {
+  gravity(direction: GravityType): this {
     this.#primitives.push(`gravity ${direction}`)
     return this
   }
@@ -2852,7 +2852,6 @@ type VirtualPixelType =
   | 'VerticalTile'
   | 'VerticalTileEdge'
   | 'White'
-type DrawGravityType = Omit<GravityType, 'None' | 'Forget'>
 type IlluminantType = 'A' | 'B' | 'C' | 'D50' | 'D55' | 'D65' | 'D75' | 'E' | 'F2' | 'F7' | 'F11'
 type IntensityType = 'Average' | 'Brightness' | 'Lightness' | 'Luma' | 'MS' | 'Rec601Luma' | 'Rec709Luma' | 'RMS'
 type AutoThresholdType = 'OTSU' | 'Kapur' | 'Triangle'
