@@ -3,9 +3,9 @@ import { Geometry } from './geometry'
 export { DrawBuilder, ImageMagickCommandBuilder }
 
 class ImageMagickCommandBuilder {
-  constructor(resource?: string) {
+  constructor(resource?: string | Buffer) {
     if (resource) {
-      this.#commands.push(this.#escape(resource))
+      this.resource(resource)
     }
   }
 
@@ -27,14 +27,27 @@ class ImageMagickCommandBuilder {
     return a
   }
 
+  fds(): Buffer[] {
+    return [...this.#buffers]
+  }
+
   command(...commands: (string | number)[]): this {
     this.#commands.push(...commands.map(String))
 
     return this
   }
 
-  resource(resource: string): this {
-    this.#commands.push(this.#escape(resource))
+  resource(input: string | Buffer): this {
+    if (Buffer.isBuffer(input)) {
+      const bufferStartIndex = 3
+      const currentBufferLength = this.#buffers.length
+
+      this.#buffers.push(input)
+      const fdRef = `fd:${bufferStartIndex + currentBufferLength}`
+      this.#commands.push(this.#escape(fdRef))
+    } else {
+      this.#commands.push(this.#escape(input))
+    }
 
     return this
   }
@@ -765,7 +778,7 @@ class ImageMagickCommandBuilder {
 
   duplicate(count: number, ...indexes: number[]): this {
     this.#commands.push('-duplicate')
-    
+
     if (indexes.length > 0) {
       this.#commands.push(this.#escape(`${count},${indexes.map(idx => this.#escape(idx)).join(',')}`))
     } else {
@@ -1649,6 +1662,7 @@ class ImageMagickCommandBuilder {
   }
 
   #commands: (string | ImageMagickCommandBuilder)[] = []
+  #buffers: Buffer[] = []
 }
 
 class DrawBuilder {

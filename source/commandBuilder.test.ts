@@ -1154,3 +1154,74 @@ test('swap method', () => {
   expect(new IMCB().swap(2, 3).parts()).toEqual(['-swap', '2,3'])
   expect(new IMCB().swap(1, 4).parts()).toEqual(['-swap', '1,4'])
 })
+
+test('resource method with string', () => {
+  const im = new IMCB()
+  
+  im.resource('image.png')
+  
+  expect(im.parts()).toEqual(['image.png'])
+})
+
+test('resource method with buffer creates fd reference', () => {
+  const im = new IMCB()
+  const buffer = Buffer.from('test image data')
+  
+  im.resource(buffer)
+  
+  expect(im.parts()).toEqual(['fd:3'])
+  expect(im.fds()).toEqual([buffer])
+})
+
+test('multiple buffers get sequential fd numbers', () => {
+  const im = new IMCB()
+  const buffer1 = Buffer.from('image1')
+  const buffer2 = Buffer.from('image2')
+  const buffer3 = Buffer.from('image3')
+  
+  im.resource(buffer1)
+  im.resource(buffer2)
+  im.resource(buffer3)
+  
+  expect(im.parts()).toEqual(['fd:3', 'fd:4', 'fd:5'])
+  expect(im.fds()).toEqual([buffer1, buffer2, buffer3])
+})
+
+test('mixed string and buffer resources', () => {
+  const im = new IMCB()
+  const buffer = Buffer.from('test')
+  
+  im.resource('file1.png')
+  im.resource(buffer)
+  im.resource('file2.png')
+  
+  expect(im.parts()).toEqual(['file1.png', 'fd:3', 'file2.png'])
+  expect(im.fds()).toEqual([buffer])
+})
+
+test('fds() returns copy of buffers array', () => {
+  const im = new IMCB()
+  const buffer = Buffer.from('test')
+  
+  im.resource(buffer)
+  const fds1 = im.fds()
+  const fds2 = im.fds()
+  
+  expect(fds1).toEqual([buffer])
+  expect(fds2).toEqual([buffer])
+  expect(fds1).not.toBe(fds2) // Should be different array instances
+})
+
+test('complex command with buffers', () => {
+  const im = new IMCB()
+  const backgroundBuffer = Buffer.from('background')
+  const overlayBuffer = Buffer.from('overlay')
+  
+  im.resource(backgroundBuffer)
+    .resource(overlayBuffer)
+    .composite()
+    .resource('output.png')
+  
+  expect(im.parts()).toEqual(['fd:3', 'fd:4', '-composite', 'output.png'])
+  expect(im.fds()).toEqual([backgroundBuffer, overlayBuffer])
+})
