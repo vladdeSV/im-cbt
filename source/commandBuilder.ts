@@ -9,15 +9,24 @@ class ImageMagickCommandBuilder {
     }
   }
 
-  parts(): string[] {
+  parts(mode: 'escape-shell' | 'allow-unsafe'): string[] {
     const a: string[] = []
     for (const part of this.#commands) {
       if (part instanceof ImageMagickCommandBuilder) {
-        a.push(...part.parts())
+        a.push(...part.parts(mode))
       } else if (part instanceof Geometry) {
         a.push(part.toString())
+      } else if (part instanceof DrawBuilder) {
+        const str = part.toString()
+        if (mode === 'escape-shell') {
+          const escaped = str.replace(/'/g, "'\\''")
+          a.push(`'${escaped}'`)
+        } else {
+          a.push(str)
+        }
       } else {
-        a.push(String(part))
+        const str = String(part)
+        a.push(mode === 'escape-shell' ? this.#escape(str) : str)
       }
     }
 
@@ -321,7 +330,6 @@ class ImageMagickCommandBuilder {
     return this
   }
 
-  // FIXME: i think this is suspectable to injections, if the programmer uses `exectute`, with a label that comes from the user input
   label(input: string | number): this {
     this.#commands.push(`label:${input}`)
 
@@ -706,6 +714,9 @@ class ImageMagickCommandBuilder {
     return this
   }
   */
+  contrastStretch(blackPoint: number, whitePoint: number): this {
+    throw "-contrast-stretch not implemented yet (sorry!), please use `.command('-contrast-stretch', '20x10')`"
+  }
 
   cycle(amount: number): this {
     this.#commands.push('-cycle')
@@ -871,7 +882,7 @@ class ImageMagickCommandBuilder {
     this.#commands.push('-draw')
 
     const drawBuilder = fn(new DrawBuilder())
-    this.#commands.push(drawBuilder.toString())
+    this.#commands.push(drawBuilder)
 
     return this
   }
@@ -2306,135 +2317,151 @@ class ImageMagickCommandBuilder {
   }
 
   #escape(data: unknown): string {
-    const input = String(data)
-
-    return input
-
-    // if single safe word, return it
-    // if (input.match(/^[\w+-]+$/)) {
-    //   return input
-    // }
-
-    // return `'${input.replace(/\\/g, '\\\\').replace(/'/, '\\\'')}'`
+    return escapeString(data)
   }
 
-  #commands: (string | number | Geometry | ImageMagickCommandBuilder)[] = []
+  #commands: (string | number | Geometry | ImageMagickCommandBuilder | DrawBuilder)[] = []
   #buffers: Buffer[] = []
+}
+
+function escapeString(data: unknown): string {
+  const input = String(data)
+
+  // if single safe word with simple characters, return it
+  if (input.match(/^[\w+.\-:=,%]+$/)) {
+    return input
+  }
+
+  return `'${input.replace(/\\/g, '\\\\').replace(/'/g, "'\\''")}'`
 }
 
 class DrawBuilder {
   #primitives: string[] = []
 
+  e(data: unknown): string {
+    const str = String(data)
+
+    if (str.match(/^[\d\w,.]+$/)) {
+      return str
+    }
+
+    // For ImageMagick draw parameter: escape backslashes and double quotes
+    return str.replace(/\\/g, '\\\\\\\\').replace(/"/g, '\\\\"')
+  }
+
   point(x: number, y: number): this {
-    this.#primitives.push(`point ${x},${y}`)
+    this.#primitives.push(`point ${this.e(x)},${this.e(y)}`)
     return this
   }
 
   line(x0: number, y0: number, x1: number, y1: number): this {
-    this.#primitives.push(`line ${x0},${y0} ${x1},${y1}`)
+    this.#primitives.push(`line ${this.e(x0)},${this.e(y0)} ${this.e(x1)},${this.e(y1)}`)
     return this
   }
 
   rectangle(x0: number, y0: number, x1: number, y1: number): this {
-    this.#primitives.push(`rectangle ${x0},${y0} ${x1},${y1}`)
+    this.#primitives.push(`rectangle ${this.e(x0)},${this.e(y0)} ${this.e(x1)},${this.e(y1)}`)
     return this
   }
 
   roundRectangle(x0: number, y0: number, x1: number, y1: number, wc: number, hc: number): this {
-    this.#primitives.push(`roundRectangle ${x0},${y0} ${x1},${y1} ${wc},${hc}`)
+    this.#primitives.push(
+      `roundRectangle ${this.e(x0)},${this.e(y0)} ${this.e(x1)},${this.e(y1)} ${this.e(wc)},${this.e(hc)}`
+    )
     return this
   }
 
   arc(x0: number, y0: number, x1: number, y1: number, a0: number, a1: number): this {
-    this.#primitives.push(`arc ${x0},${y0} ${x1},${y1} ${a0},${a1}`)
+    this.#primitives.push(`arc ${this.e(x0)},${this.e(y0)} ${this.e(x1)},${this.e(y1)} ${this.e(a0)},${this.e(a1)}`)
     return this
   }
 
   ellipse(x0: number, y0: number, rx: number, ry: number, a0: number, a1: number): this {
-    this.#primitives.push(`ellipse ${x0},${y0} ${rx},${ry} ${a0},${a1}`)
+    this.#primitives.push(`ellipse ${this.e(x0)},${this.e(y0)} ${this.e(rx)},${this.e(ry)} ${this.e(a0)},${this.e(a1)}`)
     return this
   }
 
   circle(x0: number, y0: number, x1: number, y1: number): this {
-    this.#primitives.push(`circle ${x0},${y0} ${x1},${y1}`)
+    this.#primitives.push(`circle ${this.e(x0)},${this.e(y0)} ${this.e(x1)},${this.e(y1)}`)
     return this
   }
 
   polyline(...points: [number, number][]): this {
-    const pointStr = points.map(([x, y]) => `${x},${y}`).join(' ')
-    this.#primitives.push(`polyline ${pointStr}`)
+    const pointStr = points.map(([x, y]) => `${this.e(x)},${this.e(y)}`).join(' ')
+    this.#primitives.push(`polyline ${this.e(pointStr)}`)
     return this
   }
 
   polygon(...points: [number, number][]): this {
-    const pointStr = points.map(([x, y]) => `${x},${y}`).join(' ')
-    this.#primitives.push(`polygon ${pointStr}`)
+    const pointStr = points.map(([x, y]) => `${this.e(x)},${this.e(y)}`).join(' ')
+    this.#primitives.push(`polygon ${this.e(pointStr)}`)
     return this
   }
 
   bezier(...points: [number, number][]): this {
-    const pointStr = points.map(([x, y]) => `${x},${y}`).join(' ')
-    this.#primitives.push(`bezier ${pointStr}`)
+    const pointStr = points.map(([x, y]) => `${this.e(x)},${this.e(y)}`).join(' ')
+    this.#primitives.push(`bezier ${this.e(pointStr)}`)
     return this
   }
 
   path(specification: string): this {
-    this.#primitives.push(`path '${specification}'`)
+    this.#primitives.push(`path "${this.e(specification)}"`)
     return this
   }
 
   image(operator: string, x0: number, y0: number, w: number, h: number, filename: string): this {
-    this.#primitives.push(`image ${operator} ${x0},${y0} ${w},${h} '${filename}'`)
+    this.#primitives.push(
+      `image ${this.e(operator)} ${this.e(x0)},${this.e(y0)} ${this.e(w)},${this.e(h)} "${this.e(filename)}"`
+    )
     return this
   }
 
   text(x0: number, y0: number, string: string): this {
-    this.#primitives.push(`text ${x0},${y0} '${string}'`)
+    this.#primitives.push(`text ${this.e(x0)},${this.e(y0)} "${this.e(string)}"`)
     return this
   }
 
   gravity(direction: GravityType): this {
-    this.#primitives.push(`gravity ${direction}`)
+    this.#primitives.push(`gravity ${this.e(direction)}`)
     return this
   }
 
   rotate(degrees: number): this {
-    this.#primitives.push(`rotate ${degrees}`)
+    this.#primitives.push(`rotate ${this.e(degrees)}`)
     return this
   }
 
   translate(dx: number, dy: number): this {
-    this.#primitives.push(`translate ${dx},${dy}`)
+    this.#primitives.push(`translate ${this.e(dx)},${this.e(dy)}`)
     return this
   }
 
   scale(sx: number, sy: number): this {
-    this.#primitives.push(`scale ${sx},${sy}`)
+    this.#primitives.push(`scale ${this.e(sx)},${this.e(sy)}`)
     return this
   }
 
   skewX(degrees: number): this {
-    this.#primitives.push(`skewX ${degrees}`)
+    this.#primitives.push(`skewX ${this.e(degrees)}`)
     return this
   }
 
   skewY(degrees: number): this {
-    this.#primitives.push(`skewY ${degrees}`)
+    this.#primitives.push(`skewY ${this.e(degrees)}`)
     return this
   }
 
   color(x0: number, y0: number, method: string): this {
-    this.#primitives.push(`color ${x0},${y0} ${method}`)
+    this.#primitives.push(`color ${this.e(x0)},${this.e(y0)} ${this.e(method)}`)
     return this
   }
 
   matte(x0: number, y0: number, method: string): this {
-    this.#primitives.push(`matte ${x0},${y0} ${method}`)
+    this.#primitives.push(`matte ${this.e(x0)},${this.e(y0)} ${this.e(method)}`)
     return this
   }
 
   toString(): string {
-    // FIXME: escaping required here?
     return this.#primitives.join(' ')
   }
 }
