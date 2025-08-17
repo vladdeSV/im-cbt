@@ -1,6 +1,44 @@
+import { Draw } from './draw'
 import { Geometry } from './geometry'
+import type {
+  AlphaType,
+  AutoThresholdType,
+  ChannelType,
+  ColorspaceType,
+  ComplexOperatorType,
+  ComposeType,
+  CompressType,
+  DebugType,
+  DirectionType,
+  DisposeType,
+  DistortType,
+  DitherType,
+  EndianType,
+  EvaluateType,
+  FilterType,
+  FunctionType,
+  GravityType,
+  GrayscaleType,
+  IlluminantType,
+  IntensityType,
+  IntentType,
+  InterlaceType,
+  InterpolateType,
+  LayersType,
+  LimitType,
+  ListType,
+  MorphologyType,
+  NoiseType,
+  OrientType,
+  PreviewType,
+  SparseColorMethodType,
+  StatisticType,
+  StretchType,
+  StyleType,
+  VirtualPixelType,
+} from './predefines'
 
-export { DrawBuilder, ImageMagickCommandBuilder }
+export { ImageMagickCommandBuilder }
 
 class ImageMagickCommandBuilder {
   constructor(resource?: string | Buffer) {
@@ -16,7 +54,7 @@ class ImageMagickCommandBuilder {
         a.push(...part.parts(mode))
       } else if (part instanceof Geometry) {
         a.push(part.toString())
-      } else if (part instanceof DrawBuilder) {
+      } else if (part instanceof Draw) {
         const str = part.toString()
         if (mode === 'escape-shell') {
           const escaped = str.replace(/'/g, "'\\''")
@@ -878,10 +916,10 @@ class ImageMagickCommandBuilder {
     return this
   }
 
-  draw(fn: (draw: DrawBuilder) => DrawBuilder): this {
+  draw(fn: (draw: Draw) => Draw): this {
     this.#commands.push('-draw')
 
-    const drawBuilder = fn(new DrawBuilder())
+    const drawBuilder = fn(new Draw())
     this.#commands.push(drawBuilder)
 
     return this
@@ -2320,7 +2358,7 @@ class ImageMagickCommandBuilder {
     return escapeString(data)
   }
 
-  #commands: (string | number | Geometry | ImageMagickCommandBuilder | DrawBuilder)[] = []
+  #commands: (string | number | Geometry | ImageMagickCommandBuilder | Draw)[] = []
   #buffers: Buffer[] = []
 }
 
@@ -2334,567 +2372,3 @@ function escapeString(data: unknown): string {
 
   return `'${input.replace(/\\/g, '\\\\').replace(/'/g, "'\\''")}'`
 }
-
-class DrawBuilder {
-  #primitives: string[] = []
-
-  e(data: unknown): string {
-    const str = String(data)
-
-    if (str.match(/^[\d\w,.]+$/)) {
-      return str
-    }
-
-    // For ImageMagick draw parameter: escape backslashes and double quotes
-    return str.replace(/\\/g, '\\\\\\\\').replace(/"/g, '\\\\"')
-  }
-
-  point(x: number, y: number): this {
-    this.#primitives.push(`point ${this.e(x)},${this.e(y)}`)
-    return this
-  }
-
-  line(x0: number, y0: number, x1: number, y1: number): this {
-    this.#primitives.push(`line ${this.e(x0)},${this.e(y0)} ${this.e(x1)},${this.e(y1)}`)
-    return this
-  }
-
-  rectangle(x0: number, y0: number, x1: number, y1: number): this {
-    this.#primitives.push(`rectangle ${this.e(x0)},${this.e(y0)} ${this.e(x1)},${this.e(y1)}`)
-    return this
-  }
-
-  roundRectangle(x0: number, y0: number, x1: number, y1: number, wc: number, hc: number): this {
-    this.#primitives.push(
-      `roundRectangle ${this.e(x0)},${this.e(y0)} ${this.e(x1)},${this.e(y1)} ${this.e(wc)},${this.e(hc)}`
-    )
-    return this
-  }
-
-  arc(x0: number, y0: number, x1: number, y1: number, a0: number, a1: number): this {
-    this.#primitives.push(`arc ${this.e(x0)},${this.e(y0)} ${this.e(x1)},${this.e(y1)} ${this.e(a0)},${this.e(a1)}`)
-    return this
-  }
-
-  ellipse(x0: number, y0: number, rx: number, ry: number, a0: number, a1: number): this {
-    this.#primitives.push(`ellipse ${this.e(x0)},${this.e(y0)} ${this.e(rx)},${this.e(ry)} ${this.e(a0)},${this.e(a1)}`)
-    return this
-  }
-
-  circle(x0: number, y0: number, x1: number, y1: number): this {
-    this.#primitives.push(`circle ${this.e(x0)},${this.e(y0)} ${this.e(x1)},${this.e(y1)}`)
-    return this
-  }
-
-  polyline(...points: [number, number][]): this {
-    const pointStr = points.map(([x, y]) => `${this.e(x)},${this.e(y)}`).join(' ')
-    this.#primitives.push(`polyline ${this.e(pointStr)}`)
-    return this
-  }
-
-  polygon(...points: [number, number][]): this {
-    const pointStr = points.map(([x, y]) => `${this.e(x)},${this.e(y)}`).join(' ')
-    this.#primitives.push(`polygon ${this.e(pointStr)}`)
-    return this
-  }
-
-  bezier(...points: [number, number][]): this {
-    const pointStr = points.map(([x, y]) => `${this.e(x)},${this.e(y)}`).join(' ')
-    this.#primitives.push(`bezier ${this.e(pointStr)}`)
-    return this
-  }
-
-  path(specification: string): this {
-    this.#primitives.push(`path "${this.e(specification)}"`)
-    return this
-  }
-
-  image(operator: string, x0: number, y0: number, w: number, h: number, filename: string): this {
-    this.#primitives.push(
-      `image ${this.e(operator)} ${this.e(x0)},${this.e(y0)} ${this.e(w)},${this.e(h)} "${this.e(filename)}"`
-    )
-    return this
-  }
-
-  text(x0: number, y0: number, string: string): this {
-    this.#primitives.push(`text ${this.e(x0)},${this.e(y0)} "${this.e(string)}"`)
-    return this
-  }
-
-  gravity(direction: GravityType): this {
-    this.#primitives.push(`gravity ${this.e(direction)}`)
-    return this
-  }
-
-  rotate(degrees: number): this {
-    this.#primitives.push(`rotate ${this.e(degrees)}`)
-    return this
-  }
-
-  translate(dx: number, dy: number): this {
-    this.#primitives.push(`translate ${this.e(dx)},${this.e(dy)}`)
-    return this
-  }
-
-  scale(sx: number, sy: number): this {
-    this.#primitives.push(`scale ${this.e(sx)},${this.e(sy)}`)
-    return this
-  }
-
-  skewX(degrees: number): this {
-    this.#primitives.push(`skewX ${this.e(degrees)}`)
-    return this
-  }
-
-  skewY(degrees: number): this {
-    this.#primitives.push(`skewY ${this.e(degrees)}`)
-    return this
-  }
-
-  color(x0: number, y0: number, method: string): this {
-    this.#primitives.push(`color ${this.e(x0)},${this.e(y0)} ${this.e(method)}`)
-    return this
-  }
-
-  matte(x0: number, y0: number, method: string): this {
-    this.#primitives.push(`matte ${this.e(x0)},${this.e(y0)} ${this.e(method)}`)
-    return this
-  }
-
-  toString(): string {
-    return this.#primitives.join(' ')
-  }
-}
-
-type GravityType =
-  | 'None'
-  | 'Center'
-  | 'East'
-  | 'Forget'
-  | 'NorthEast'
-  | 'North'
-  | 'NorthWest'
-  | 'SouthEast'
-  | 'South'
-  | 'SouthWest'
-  | 'West'
-type FilterType =
-  | 'Bartlett'
-  | 'Blackman'
-  | 'Bohman'
-  | 'Box'
-  | 'Catrom'
-  | 'Cosine'
-  | 'Cubic'
-  | 'Gaussian'
-  | 'Hamming'
-  | 'Hann'
-  | 'Hermite'
-  | 'Jinc'
-  | 'Kaiser'
-  | 'Lagrange'
-  | 'Lanczos'
-  | 'Lanczos2'
-  | 'Lanczos2Sharp'
-  | 'LanczosRadius'
-  | 'LanczosSharp'
-  | 'Mitchell'
-  | 'Parzen'
-  | 'Point'
-  | 'Quadratic'
-  | 'Robidoux'
-  | 'RobidouxSharp'
-  | 'Sinc'
-  | 'SincFast'
-  | 'Spline'
-  | 'CubicSpline'
-  | 'Triangle'
-  | 'Welch'
-type InterpolateType =
-  | 'Average'
-  | 'Average4'
-  | 'Average9'
-  | 'Average16'
-  | 'Background'
-  | 'Bilinear'
-  | 'Blend'
-  | 'Catrom'
-  | 'Integer'
-  | 'Mesh'
-  | 'Nearest'
-  | 'Spline'
-type AlphaType =
-  | 'Activate'
-  | 'Associate'
-  | 'Background'
-  | 'Copy'
-  | 'Deactivate'
-  | 'Discrete'
-  | 'Disassociate'
-  | 'Extract'
-  | 'Off'
-  | 'On'
-  | 'Opaque'
-  | 'Remove'
-  | 'Set'
-  | 'Shape'
-  | 'Transparent'
-type ComposeType =
-  | 'Atop'
-  | 'Blend'
-  | 'Blur'
-  | 'Bumpmap'
-  | 'ChangeMask'
-  | 'Clear'
-  | 'ColorBurn'
-  | 'ColorDodge'
-  | 'Colorize'
-  | 'CopyAlpha'
-  | 'CopyBlack'
-  | 'CopyBlue'
-  | 'Copy'
-  | 'CopyCyan'
-  | 'CopyGreen'
-  | 'CopyMagenta'
-  | 'CopyRed'
-  | 'CopyYellow'
-  | 'Darken'
-  | 'DarkenIntensity'
-  | 'Difference'
-  | 'Displace'
-  | 'Dissolve'
-  | 'Distort'
-  | 'DivideDst'
-  | 'DivideSrc'
-  | 'DstAtop'
-  | 'Dst'
-  | 'DstIn'
-  | 'DstOut'
-  | 'DstOver'
-  | 'Exclusion'
-  | 'Freeze'
-  | 'HardLight'
-  | 'HardMix'
-  | 'Hue'
-  | 'In'
-  | 'Intensity'
-  | 'Interpolate'
-  | 'LightenIntensity'
-  | 'Lighten'
-  | 'LinearBurn'
-  | 'LinearDodge'
-  | 'LinearLight'
-  | 'Luminize'
-  | 'Mathematics'
-  | 'MinusDst'
-  | 'MinusSrc'
-  | 'Modulate'
-  | 'ModulusAdd'
-  | 'ModulusSubtract'
-  | 'Multiply'
-  | 'Negate'
-  | 'None'
-  | 'Out'
-  | 'Overlay'
-  | 'Over'
-  | 'PegtopLight'
-  | 'PinLight'
-  | 'Plus'
-  | 'Reflect'
-  | 'Replace'
-  | 'RMSE'
-  | 'Saturate'
-  | 'Screen'
-  | 'SoftBurn'
-  | 'SoftDodge'
-  | 'SoftLight'
-  | 'SrcAtop'
-  | 'SrcIn'
-  | 'SrcOut'
-  | 'SrcOver'
-  | 'Src'
-  | 'Stamp'
-  | 'Stereo'
-  | 'VividLight'
-  | 'Xor'
-type DirectionType = 'left-to-right' | 'right-to-left'
-type DisposeType = 'Background' | 'None' | 'Previous'
-type DistortType =
-  | 'Affine'
-  | 'AffineProjection'
-  | 'Arc'
-  | 'Barrel'
-  | 'BilinearForward'
-  | 'BilinearReverse'
-  | 'DePolar'
-  | 'Perspective'
-  | 'PerspectiveProjection'
-  | 'Polar'
-  | 'Polynomial'
-  | 'Resize'
-  | 'Rotate'
-  | 'ScaleRotateTranslate'
-  | 'Shepards'
-type DitherType = 'FloydSteinberg' | 'Riemersma' | 'None'
-type DebugType =
-  | 'All'
-  | 'Accelerate'
-  | 'Annotate'
-  | 'Blob'
-  | 'Cache'
-  | 'Coder'
-  | 'Configure'
-  | 'Deprecate'
-  | 'Exception'
-  | 'Locale'
-  | 'None'
-  | 'Render'
-  | 'Resource'
-  | 'Security'
-  | 'TemporaryFile'
-  | 'Trace'
-  | 'Transform'
-  | 'User'
-  | 'X11'
-type ColorspaceType =
-  | 'CMY'
-  | 'CMYK'
-  | 'Gray'
-  | 'HCL'
-  | 'HCLp'
-  | 'HSB'
-  | 'HSI'
-  | 'HSL'
-  | 'HSV'
-  | 'HWB'
-  | 'Lab'
-  | 'LCH'
-  | 'LCHab'
-  | 'LCHuv'
-  | 'LMS'
-  | 'Log'
-  | 'Luv'
-  | 'OHTA'
-  | 'Rec601YCbCr'
-  | 'Rec709YCbCr'
-  | 'RGB'
-  | 'scRGB'
-  | 'sRGB'
-  | 'Transparent'
-  | 'XYZ'
-  | 'YCbCr'
-  | 'YCC'
-  | 'YDbDr'
-  | 'YIQ'
-  | 'YPbPr'
-  | 'YUV'
-type CompressType =
-  | 'B44'
-  | 'B44A'
-  | 'BZip'
-  | 'DXT1'
-  | 'DXT3'
-  | 'DXT5'
-  | 'Fax'
-  | 'Group4'
-  | 'JBIG1'
-  | 'JBIG2'
-  | 'JPEG'
-  | 'JPEG2000'
-  | 'Lossless'
-  | 'LosslessJPEG'
-  | 'LZMA'
-  | 'LZW'
-  | 'None'
-  | 'Piz'
-  | 'Pxr24'
-  | 'RLE'
-  | 'Zip'
-  | 'ZipS'
-type ChannelType =
-  | 'Red'
-  | 'Green'
-  | 'Blue'
-  | 'Alpha'
-  | 'Gray'
-  | 'Cyan'
-  | 'Magenta'
-  | 'Yellow'
-  | 'Black'
-  | 'Opacity'
-  | 'Index'
-  | 'RGB'
-  | 'RGBA'
-  | 'CMYK'
-  | 'CMYKA'
-  | number
-type GrayscaleType = 'average' | 'brightness' | 'lightness' | 'luma' | 'rec601luma' | 'rec709luma' | 'rms'
-type EndianType = 'LSB' | 'MSB'
-type EvaluateType =
-  | 'Add'
-  | 'AddModulus'
-  | 'And'
-  | 'Cos'
-  | 'Cosine'
-  | 'Divide'
-  | 'Exp'
-  | 'Gaussian'
-  | 'LeftShift'
-  | 'Log'
-  | 'Max'
-  | 'Mean'
-  | 'Median'
-  | 'Min'
-  | 'Multiply'
-  | 'Or'
-  | 'Pow'
-  | 'RightShift'
-  | 'RMS'
-  | 'Set'
-  | 'Sin'
-  | 'Sine'
-  | 'Subtract'
-  | 'Sum'
-  | 'Threshold'
-  | 'ThresholdBlack'
-  | 'ThresholdWhite'
-  | 'Uniform'
-  | 'Xor'
-type FunctionType = 'Polynomial' | 'Sinusoid' | 'ArcSin' | 'ArcTan'
-type IntentType = 'Absolute' | 'Perceptual' | 'Relative' | 'Saturation'
-type InterlaceType = 'Line' | 'None' | 'Plane' | 'Partition' | 'JPEG' | 'GIF' | 'PNG'
-type LayersType =
-  | 'coalesce'
-  | 'compare-any'
-  | 'compare-clear'
-  | 'compare-overlay'
-  | 'composite'
-  | 'dispose'
-  | 'flatten'
-  | 'merge'
-  | 'mosaic'
-  | 'optimize'
-  | 'optimize-frame'
-  | 'optimize-plus'
-  | 'optimize-trans'
-  | 'remove-dups'
-  | 'remove-zero'
-type LimitType = 'disk' | 'file' | 'map' | 'memory' | 'thread' | 'throttle' | 'time'
-type MorphologyType =
-  | 'Convolve'
-  | 'Correlate'
-  | 'Erode'
-  | 'Dilate'
-  | 'ErodeIntensity'
-  | 'DilateIntensity'
-  | 'Distance'
-  | 'Open'
-  | 'Close'
-  | 'OpenIntensity'
-  | 'CloseIntensity'
-  | 'Smooth'
-  | 'EdgeIn'
-  | 'EdgeOut'
-  | 'Edge'
-  | 'TopHat'
-  | 'BottomHat'
-  | 'HitAndMiss'
-  | 'Thinning'
-  | 'Thicken'
-type NoiseType = 'Gaussian' | 'Impulse' | 'Laplacian' | 'Multiplicative' | 'Poisson' | 'Random' | 'Uniform'
-type OrientType =
-  | 'TopLeft'
-  | 'TopRight'
-  | 'BottomRight'
-  | 'BottomLeft'
-  | 'LeftTop'
-  | 'RightTop'
-  | 'RightBottom'
-  | 'LeftBottom'
-type PreviewType =
-  | 'Rotate'
-  | 'Roll'
-  | 'Hue'
-  | 'Saturation'
-  | 'Brightness'
-  | 'Gamma'
-  | 'Spiff'
-  | 'Dull'
-  | 'Grayscale'
-  | 'Quantize'
-  | 'Despeckle'
-  | 'ReduceNoise'
-  | 'AddNoise'
-  | 'Sharpen'
-  | 'Blur'
-  | 'Threshold'
-  | 'EdgeDetect'
-  | 'Spread'
-  | 'Solarize'
-  | 'Shade'
-  | 'Raise'
-  | 'Segment'
-  | 'Swirl'
-  | 'Implode'
-  | 'Wave'
-  | 'OilPaint'
-  | 'Charcoal'
-  | 'JPEG'
-type StatisticType =
-  | 'Gradient'
-  | 'Maximum'
-  | 'Mean'
-  | 'Median'
-  | 'Minimum'
-  | 'Mode'
-  | 'Nonpeak'
-  | 'RootMeanSquare'
-  | 'StandardDeviation'
-type StretchType =
-  | 'Any'
-  | 'Condensed'
-  | 'Expanded'
-  | 'ExtraCondensed'
-  | 'ExtraExpanded'
-  | 'Normal'
-  | 'SemiCondensed'
-  | 'SemiExpanded'
-  | 'UltraCondensed'
-  | 'UltraExpanded'
-type StyleType = 'Any' | 'Italic' | 'Normal' | 'Oblique'
-type VirtualPixelType =
-  | 'Background'
-  | 'Black'
-  | 'CheckerTile'
-  | 'Dither'
-  | 'Edge'
-  | 'Gray'
-  | 'HorizontalTile'
-  | 'HorizontalTileEdge'
-  | 'Mirror'
-  | 'None'
-  | 'Random'
-  | 'Tile'
-  | 'Transparent'
-  | 'VerticalTile'
-  | 'VerticalTileEdge'
-  | 'White'
-type IlluminantType = 'A' | 'B' | 'C' | 'D50' | 'D55' | 'D65' | 'D75' | 'E' | 'F2' | 'F7' | 'F11'
-type IntensityType = 'Average' | 'Brightness' | 'Lightness' | 'Luma' | 'MS' | 'Rec601Luma' | 'Rec709Luma' | 'RMS'
-type AutoThresholdType = 'OTSU' | 'Kapur' | 'Triangle'
-type SparseColorMethodType = 'Barycentric' | 'Bilinear' | 'Polynomial' | 'Shepards' | 'Voronoi'
-type ComplexOperatorType = 'Add' | 'Conjugate' | 'Divide' | 'MagnitudePhase' | 'Multiply' | 'RealImaginary' | 'Subtract'
-type ListType =
-  | 'Color'
-  | 'Configure'
-  | 'Delegate'
-  | 'Font'
-  | 'Format'
-  | 'Locale'
-  | 'Log'
-  | 'Magic'
-  | 'Module'
-  | 'Policy'
-  | 'Resource'
-  | 'Threshold'
-  | 'Type'
