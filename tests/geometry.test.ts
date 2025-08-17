@@ -1,5 +1,5 @@
-import { describe, test, expect } from 'bun:test'
-import { Geometry } from './geometry'
+import { describe, expect, test } from 'bun:test'
+import { Geometry } from '../source/geometry'
 
 const validOffsets: [number, number, string][] = [
   [0, 0, '+0+0'],
@@ -12,14 +12,12 @@ const validOffsets: [number, number, string][] = [
 
 describe.each(validOffsets)('valid offset', (x, y, result) => {
   test(`with values ${x},${y} to equal '${result}'`, () => {
-
     expect(new Geometry().offset(x, y).toString()).toStrictEqual(result)
 
     // expect(new Geometry().offset().toString()).toStrictEqual('')
     // expect(() => new Geometry().offset('1' as any, '1' as any)).toThrowError()
     // expect(() => new Geometry().offset('1' as any, undefined as any)).toThrowError()
   })
-
 })
 
 describe('geometry misc', () => {
