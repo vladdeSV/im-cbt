@@ -715,7 +715,7 @@ class ImageMagickCommandBuilder {
   }
   */
   contrastStretch(blackPoint: number, whitePoint: number): this {
-    throw "-contrast-stretch not implemented yet (sorry!), please use `.command('-contrast-stretch', '20x10')`"
+    throw `-contrast-stretch not implemented yet (sorry!), please use \`.command('-contrast-stretch', '${blackPoint}x${whitePoint}')\``
   }
 
   cycle(amount: number): this {
