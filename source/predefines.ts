@@ -430,6 +430,7 @@ type ListType =
   | 'Resource'
   | 'Threshold'
   | 'Type'
+type NumberOrPercent = number | `${number}%`
 
 export type {
   AlphaType,
@@ -460,6 +461,7 @@ export type {
   ListType,
   MorphologyType,
   NoiseType,
+  NumberOrPercent,
   OrientType,
   PreviewType,
   SparseColorMethodType,
