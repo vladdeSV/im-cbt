@@ -343,6 +343,13 @@ class ImageMagickCommandBuilder {
     return this
   }
 
+  blurExt(fn: (g: Geometry) => Geometry): this {
+    this.#commands.push('-blur')
+    this.#commands.push(fn(new Geometry()))
+
+    return this
+  }
+
   sharpen(radius: number = 0, sigma?: number): this {
     this.#commands.push('-sharpen')
 
@@ -351,6 +358,13 @@ class ImageMagickCommandBuilder {
     } else {
       this.#commands.push(radius)
     }
+
+    return this
+  }
+
+  sharpenExt(fn: (g: Geometry) => Geometry): this {
+    this.#commands.push('-sharpen')
+    this.#commands.push(fn(new Geometry()))
 
     return this
   }
@@ -446,6 +460,13 @@ class ImageMagickCommandBuilder {
     return this
   }
 
+  adaptiveBlurExt(fn: (g: Geometry) => Geometry): this {
+    this.#commands.push('-adaptive-blur')
+    this.#commands.push(fn(new Geometry()))
+
+    return this
+  }
+
   adaptiveResize(w?: number, h?: number): this {
     if (w || h) {
       this.#commands.push('-adaptive-resize')
@@ -472,6 +493,13 @@ class ImageMagickCommandBuilder {
     } else {
       this.#commands.push(radius)
     }
+
+    return this
+  }
+
+  adaptiveSharpenExt(fn: (g: Geometry) => Geometry): this {
+    this.#commands.push('-adaptive-sharpen')
+    this.#commands.push(fn(new Geometry()))
 
     return this
   }
@@ -543,6 +571,7 @@ class ImageMagickCommandBuilder {
     return this
   }
 
+  /** @deprecated `-affine` is deprecated in ImageMagick. use `.distort('AffineProjection', ...)` instead. */
   affine(sx: number, rx: number, ry: number, sy: number, tx?: number, ty?: number): this {
     this.#commands.push('-affine')
 
@@ -558,6 +587,14 @@ class ImageMagickCommandBuilder {
   annotate(degrees: number, text: string): this {
     this.#commands.push('-annotate')
     this.#commands.push(degrees)
+    this.#commands.push(text)
+
+    return this
+  }
+
+  annotateExt(fn: (g: Geometry) => Geometry, text: string): this {
+    this.#commands.push('-annotate')
+    this.#commands.push(fn(new Geometry()))
     this.#commands.push(text)
 
     return this
@@ -608,6 +645,13 @@ class ImageMagickCommandBuilder {
     return this
   }
 
+  borderExt(fn: (g: Geometry) => Geometry): this {
+    this.#commands.push('-border')
+    this.#commands.push(fn(new Geometry()))
+
+    return this
+  }
+
   bordercolor(color: string): this {
     this.#commands.push('-bordercolor')
     this.#commands.push(color)
@@ -633,6 +677,13 @@ class ImageMagickCommandBuilder {
     return this
   }
 
+  gaussianBlurExt(fn: (g: Geometry) => Geometry): this {
+    this.#commands.push('-gaussian-blur')
+    this.#commands.push(fn(new Geometry()))
+
+    return this
+  }
+
   density(x: number, y?: number): this {
     this.#commands.push('-density')
 
@@ -641,6 +692,13 @@ class ImageMagickCommandBuilder {
     } else {
       this.#commands.push(x)
     }
+
+    return this
+  }
+
+  densityExt(fn: (g: Geometry) => Geometry): this {
+    this.#commands.push('-density')
+    this.#commands.push(fn(new Geometry()))
 
     return this
   }
@@ -701,6 +759,13 @@ class ImageMagickCommandBuilder {
     return this
   }
 
+  brightnessContrastExt(fn: (g: Geometry) => Geometry): this {
+    this.#commands.push('-brightness-contrast')
+    this.#commands.push(fn(new Geometry()))
+
+    return this
+  }
+
   channel(...types: ChannelType[]): this {
     if (types.length > 0) {
       this.#commands.push('-channel')
@@ -724,6 +789,13 @@ class ImageMagickCommandBuilder {
     return this
   }
 
+  charcoalExt(fn: (g: Geometry) => Geometry): this {
+    this.#commands.push('-charcoal')
+    this.#commands.push(fn(new Geometry()))
+
+    return this
+  }
+
   chop(width: number, height: number, x?: number, y?: number): this {
     this.#commands.push('-chop')
 
@@ -737,6 +809,13 @@ class ImageMagickCommandBuilder {
     return this
   }
 
+  chopExt(fn: (g: Geometry) => Geometry): this {
+    this.#commands.push('-chop')
+    this.#commands.push(fn(new Geometry()))
+
+    return this
+  }
+
   compress(type: CompressType): this {
     this.#commands.push('-compress')
     this.#commands.push(type)
@@ -744,16 +823,18 @@ class ImageMagickCommandBuilder {
     return this
   }
 
-  /* FIXME: add this method, while supporting passing in both numbers and/or percentages
   contrastStretch(blackPoint: number, whitePoint: number): this {
     this.#commands.push('-contrast-stretch')
-    this.#commands.push(`${blackPoint}%x${whitePoint}%`)
+    this.#commands.push(`${blackPoint}x${whitePoint}`)
 
     return this
   }
-  */
-  contrastStretch(blackPoint: number, whitePoint: number): this {
-    throw `-contrast-stretch not implemented yet (sorry!), please use \`.command('-contrast-stretch', '${blackPoint}x${whitePoint}')\``
+
+  contrastStretchExt(fn: (g: Geometry) => Geometry): this {
+    this.#commands.push('-contrast-stretch')
+    this.#commands.push(fn(new Geometry()))
+
+    return this
   }
 
   cycle(amount: number): this {
@@ -778,6 +859,13 @@ class ImageMagickCommandBuilder {
     } else {
       this.#commands.push(radius)
     }
+
+    return this
+  }
+
+  embossExt(fn: (g: Geometry) => Geometry): this {
+    this.#commands.push('-emboss')
+    this.#commands.push(fn(new Geometry()))
 
     return this
   }
@@ -810,6 +898,7 @@ class ImageMagickCommandBuilder {
     return this
   }
 
+  /** @deprecated `-median` is deprecated in ImageMagick. use `.statistic('Median', width, height)` instead. */
   median(radius: number = 0, sigma?: number): this {
     this.#commands.push('-median')
 
@@ -818,6 +907,14 @@ class ImageMagickCommandBuilder {
     } else {
       this.#commands.push(radius)
     }
+
+    return this
+  }
+
+  /** @deprecated `-median` is deprecated in ImageMagick. use `.statisticExt('Median', fn)` instead. */
+  medianExt(fn: (g: Geometry) => Geometry): this {
+    this.#commands.push('-median')
+    this.#commands.push(fn(new Geometry()))
 
     return this
   }
@@ -966,6 +1063,13 @@ class ImageMagickCommandBuilder {
     return this
   }
 
+  extractExt(fn: (g: Geometry) => Geometry): this {
+    this.#commands.push('-extract')
+    this.#commands.push(fn(new Geometry()))
+
+    return this
+  }
+
   family(name: string): this {
     this.#commands.push('-family')
     this.#commands.push(name)
@@ -992,6 +1096,13 @@ class ImageMagickCommandBuilder {
     }
 
     this.#commands.push(frameSpec)
+
+    return this
+  }
+
+  frameExt(fn: (g: Geometry) => Geometry): this {
+    this.#commands.push('-frame')
+    this.#commands.push(fn(new Geometry()))
 
     return this
   }
@@ -1057,6 +1168,13 @@ class ImageMagickCommandBuilder {
     return this
   }
 
+  latExt(fn: (g: Geometry) => Geometry): this {
+    this.#commands.push('-lat')
+    this.#commands.push(fn(new Geometry()))
+
+    return this
+  }
+
   layers(method: LayersType): this {
     this.#commands.push('-layers')
     this.#commands.push(method)
@@ -1092,6 +1210,13 @@ class ImageMagickCommandBuilder {
     return this
   }
 
+  linearStretchExt(fn: (g: Geometry) => Geometry): this {
+    this.#commands.push('-linear-stretch')
+    this.#commands.push(fn(new Geometry()))
+
+    return this
+  }
+
   liquidRescale(width: number, height?: number, deltaX?: number, rigidity?: number): this {
     this.#commands.push('-liquid-rescale')
 
@@ -1107,6 +1232,13 @@ class ImageMagickCommandBuilder {
     }
 
     this.#commands.push(rescaleSpec)
+
+    return this
+  }
+
+  liquidRescaleExt(fn: (g: Geometry) => Geometry): this {
+    this.#commands.push('-liquid-rescale')
+    this.#commands.push(fn(new Geometry()))
 
     return this
   }
@@ -1181,6 +1313,13 @@ class ImageMagickCommandBuilder {
     return this
   }
 
+  motionBlurExt(fn: (g: Geometry) => Geometry): this {
+    this.#commands.push('-motion-blur')
+    this.#commands.push(fn(new Geometry()))
+
+    return this
+  }
+
   noise(type?: NoiseType): this {
     if (type) {
       this.#commands.push('-noise')
@@ -1188,6 +1327,13 @@ class ImageMagickCommandBuilder {
     } else {
       this.#commands.push('+noise')
     }
+
+    return this
+  }
+
+  noiseExt(fn: (g: Geometry) => Geometry): this {
+    this.#commands.push('-noise')
+    this.#commands.push(fn(new Geometry()))
 
     return this
   }
@@ -1213,6 +1359,13 @@ class ImageMagickCommandBuilder {
     } else {
       this.#commands.push('+page')
     }
+
+    return this
+  }
+
+  pageExt(fn: (g: Geometry) => Geometry): this {
+    this.#commands.push('-page')
+    this.#commands.push(fn(new Geometry()))
 
     return this
   }
@@ -1303,6 +1456,17 @@ class ImageMagickCommandBuilder {
     return this
   }
 
+  raiseExt(fn: (g: Geometry) => Geometry, lowered?: boolean): this {
+    if (lowered === true) {
+      this.#commands.push('+raise')
+    } else {
+      this.#commands.push('-raise')
+    }
+    this.#commands.push(fn(new Geometry()))
+
+    return this
+  }
+
   randomThreshold(low: number, high: number): this {
     this.#commands.push('-random-threshold')
     this.#commands.push(`${low}%,${high}%`)
@@ -1359,9 +1523,23 @@ class ImageMagickCommandBuilder {
     return this
   }
 
+  repageExt(fn: (g: Geometry) => Geometry): this {
+    this.#commands.push('-repage')
+    this.#commands.push(fn(new Geometry()))
+
+    return this
+  }
+
   resample(density: string): this {
     this.#commands.push('-resample')
     this.#commands.push(density)
+
+    return this
+  }
+
+  resampleExt(fn: (g: Geometry) => Geometry): this {
+    this.#commands.push('-resample')
+    this.#commands.push(fn(new Geometry()))
 
     return this
   }
@@ -1373,9 +1551,23 @@ class ImageMagickCommandBuilder {
     return this
   }
 
+  rollExt(fn: (g: Geometry) => Geometry): this {
+    this.#commands.push('-roll')
+    this.#commands.push(fn(new Geometry()))
+
+    return this
+  }
+
   sample(geometry: string): this {
     this.#commands.push('-sample')
     this.#commands.push(geometry)
+
+    return this
+  }
+
+  sampleExt(fn: (g: Geometry) => Geometry): this {
+    this.#commands.push('-sample')
+    this.#commands.push(fn(new Geometry()))
 
     return this
   }
@@ -1387,9 +1579,23 @@ class ImageMagickCommandBuilder {
     return this
   }
 
+  samplingFactorExt(fn: (g: Geometry) => Geometry): this {
+    this.#commands.push('-sampling-factor')
+    this.#commands.push(fn(new Geometry()))
+
+    return this
+  }
+
   scale(geometry: string): this {
     this.#commands.push('-scale')
     this.#commands.push(geometry)
+
+    return this
+  }
+
+  scaleExt(fn: (g: Geometry) => Geometry): this {
+    this.#commands.push('-scale')
+    this.#commands.push(fn(new Geometry()))
 
     return this
   }
@@ -1415,9 +1621,23 @@ class ImageMagickCommandBuilder {
     return this
   }
 
+  segmentExt(fn: (g: Geometry) => Geometry): this {
+    this.#commands.push('-segment')
+    this.#commands.push(fn(new Geometry()))
+
+    return this
+  }
+
   selectiveBlur(radius: number = 0, sigma: number, threshold: string): this {
     this.#commands.push('-selective-blur')
     this.#commands.push(`${radius}x${sigma}+${threshold}`)
+
+    return this
+  }
+
+  selectiveBlurExt(fn: (g: Geometry) => Geometry): this {
+    this.#commands.push('-selective-blur')
+    this.#commands.push(fn(new Geometry()))
 
     return this
   }
@@ -1466,6 +1686,13 @@ class ImageMagickCommandBuilder {
     return this
   }
 
+  shadowExt(fn: (g: Geometry) => Geometry): this {
+    this.#commands.push('-shadow')
+    this.#commands.push(fn(new Geometry()))
+
+    return this
+  }
+
   shave(width: number, height: number): this {
     this.#commands.push('-shave')
     this.#commands.push(new Geometry().size(width, height))
@@ -1473,9 +1700,23 @@ class ImageMagickCommandBuilder {
     return this
   }
 
+  shaveExt(fn: (g: Geometry) => Geometry): this {
+    this.#commands.push('-shave')
+    this.#commands.push(fn(new Geometry()))
+
+    return this
+  }
+
   shear(xDegrees: number, yDegrees: number): this {
     this.#commands.push('-shear')
     this.#commands.push(`${xDegrees}x${yDegrees}`)
+
+    return this
+  }
+
+  shearExt(fn: (g: Geometry) => Geometry): this {
+    this.#commands.push('-shear')
+    this.#commands.push(fn(new Geometry()))
 
     return this
   }
@@ -1491,9 +1732,27 @@ class ImageMagickCommandBuilder {
     return this
   }
 
+  sigmoidalContrastExt(fn: (g: Geometry) => Geometry, sharpen?: boolean): this {
+    if (sharpen === true) {
+      this.#commands.push('+sigmoidal-contrast')
+    } else {
+      this.#commands.push('-sigmoidal-contrast')
+    }
+    this.#commands.push(fn(new Geometry()))
+
+    return this
+  }
+
   sketch(radius: number = 0, sigma: number, angle: number): this {
     this.#commands.push('-sketch')
     this.#commands.push(`${radius}x${sigma}+${angle}`)
+
+    return this
+  }
+
+  sketchExt(fn: (g: Geometry) => Geometry): this {
+    this.#commands.push('-sketch')
+    this.#commands.push(fn(new Geometry()))
 
     return this
   }
@@ -1505,6 +1764,17 @@ class ImageMagickCommandBuilder {
       this.#commands.push('+smush')
     }
     this.#commands.push(offset)
+
+    return this
+  }
+
+  smushExt(fn: (g: Geometry) => Geometry, vertical?: boolean): this {
+    if (vertical === true) {
+      this.#commands.push('-smush')
+    } else {
+      this.#commands.push('+smush')
+    }
+    this.#commands.push(fn(new Geometry()))
 
     return this
   }
@@ -1523,6 +1793,13 @@ class ImageMagickCommandBuilder {
     return this
   }
 
+  spliceExt(fn: (g: Geometry) => Geometry): this {
+    this.#commands.push('-splice')
+    this.#commands.push(fn(new Geometry()))
+
+    return this
+  }
+
   spread(radius: number): this {
     this.#commands.push('-spread')
     this.#commands.push(radius)
@@ -1534,6 +1811,14 @@ class ImageMagickCommandBuilder {
     this.#commands.push('-statistic')
     this.#commands.push(type)
     this.#commands.push(`${width}x${height}`)
+
+    return this
+  }
+
+  statisticExt(type: StatisticType, fn: (g: Geometry) => Geometry): this {
+    this.#commands.push('-statistic')
+    this.#commands.push(type)
+    this.#commands.push(fn(new Geometry()))
 
     return this
   }
@@ -1695,6 +1980,13 @@ class ImageMagickCommandBuilder {
     return this
   }
 
+  unsharpExt(fn: (g: Geometry) => Geometry): this {
+    this.#commands.push('-unsharp')
+    this.#commands.push(fn(new Geometry()))
+
+    return this
+  }
+
   verbose(enable: boolean = true): this {
     if (enable === true) {
       this.#commands.push('-verbose')
@@ -1734,9 +2026,23 @@ class ImageMagickCommandBuilder {
     return this
   }
 
+  vignetteExt(fn: (g: Geometry) => Geometry): this {
+    this.#commands.push('-vignette')
+    this.#commands.push(fn(new Geometry()))
+
+    return this
+  }
+
   wave(amplitude: number, wavelength: number): this {
     this.#commands.push('-wave')
     this.#commands.push(`${amplitude}x${wavelength}`)
+
+    return this
+  }
+
+  waveExt(fn: (g: Geometry) => Geometry): this {
+    this.#commands.push('-wave')
+    this.#commands.push(fn(new Geometry()))
 
     return this
   }
@@ -1792,6 +2098,13 @@ class ImageMagickCommandBuilder {
 
   caption(text: string): this {
     this.#commands.push('-caption')
+    this.#commands.push(text)
+
+    return this
+  }
+
+  labelProperty(text: string): this {
+    this.#commands.push('-label')
     this.#commands.push(text)
 
     return this
@@ -1866,6 +2179,14 @@ class ImageMagickCommandBuilder {
     return this
   }
 
+  wordBreak(type: string): this {
+    this.#commands.push('-word-break')
+    this.#commands.push(type)
+
+    return this
+  }
+
+  /** @deprecated `-matte` is deprecated in ImageMagick. use `.alpha('Set')` (or another alpha type) instead. */
   matte(): this {
     this.#commands.push('-matte')
 
@@ -1924,6 +2245,13 @@ class ImageMagickCommandBuilder {
     return this
   }
 
+  tileOffsetExt(fn: (g: Geometry) => Geometry): this {
+    this.#commands.push('-tile-offset')
+    this.#commands.push(fn(new Geometry()))
+
+    return this
+  }
+
   transparentColor(color: string): this {
     this.#commands.push('-transparent-color')
     this.#commands.push(color)
@@ -1961,6 +2289,13 @@ class ImageMagickCommandBuilder {
   bilateralBlur(radius: number, sigma: number): this {
     this.#commands.push('-bilateral-blur')
     this.#commands.push(`${radius}x${sigma}`)
+
+    return this
+  }
+
+  bilateralBlurExt(fn: (g: Geometry) => Geometry): this {
+    this.#commands.push('-bilateral-blur')
+    this.#commands.push(fn(new Geometry()))
 
     return this
   }
@@ -2069,6 +2404,14 @@ class ImageMagickCommandBuilder {
     return this
   }
 
+  floodfillExt(fn: (g: Geometry) => Geometry, color: string): this {
+    this.#commands.push('-floodfill')
+    this.#commands.push(fn(new Geometry()))
+    this.#commands.push(color)
+
+    return this
+  }
+
   function(name: FunctionType, ...parameters: number[]): this {
     this.#commands.push('-function')
     this.#commands.push(name)
@@ -2085,6 +2428,13 @@ class ImageMagickCommandBuilder {
 
     this.#commands.push('-hough-lines')
     this.#commands.push(command)
+
+    return this
+  }
+
+  houghLinesExt(fn: (g: Geometry) => Geometry): this {
+    this.#commands.push('-hough-lines')
+    this.#commands.push(fn(new Geometry()))
 
     return this
   }
@@ -2113,9 +2463,23 @@ class ImageMagickCommandBuilder {
     return this
   }
 
+  interpolativeResizeExt(fn: (g: Geometry) => Geometry): this {
+    this.#commands.push('-interpolative-resize')
+    this.#commands.push(fn(new Geometry()))
+
+    return this
+  }
+
   kmeans(colors: number, iterations: number, tolerance: number): this {
     this.#commands.push('-kmeans')
     this.#commands.push(`${colors}x${iterations}+${tolerance}`)
+
+    return this
+  }
+
+  kmeansExt(fn: (g: Geometry) => Geometry): this {
+    this.#commands.push('-kmeans')
+    this.#commands.push(fn(new Geometry()))
 
     return this
   }
@@ -2128,6 +2492,13 @@ class ImageMagickCommandBuilder {
     } else {
       this.#commands.push(radius)
     }
+
+    return this
+  }
+
+  kuwaharaExt(fn: (g: Geometry) => Geometry): this {
+    this.#commands.push('-kuwahara')
+    this.#commands.push(fn(new Geometry()))
 
     return this
   }
@@ -2146,9 +2517,23 @@ class ImageMagickCommandBuilder {
     return this
   }
 
+  localContrastExt(fn: (g: Geometry) => Geometry): this {
+    this.#commands.push('-local-contrast')
+    this.#commands.push(fn(new Geometry()))
+
+    return this
+  }
+
   meanShift(width: number, height: number, distance: number): this {
     this.#commands.push('-mean-shift')
     this.#commands.push(`${width}x${height}+${distance}`)
+
+    return this
+  }
+
+  meanShiftExt(fn: (g: Geometry) => Geometry): this {
+    this.#commands.push('-mean-shift')
+    this.#commands.push(fn(new Geometry()))
 
     return this
   }
@@ -2161,6 +2546,13 @@ class ImageMagickCommandBuilder {
     } else {
       this.#commands.push(width)
     }
+
+    return this
+  }
+
+  modeExt(fn: (g: Geometry) => Geometry): this {
+    this.#commands.push('-mode')
+    this.#commands.push(fn(new Geometry()))
 
     return this
   }
@@ -2276,6 +2668,14 @@ class ImageMagickCommandBuilder {
     this.#commands.push('-copy')
     this.#commands.push(new Geometry().size(width, height).offset(sourceX, sourceY))
     this.#commands.push(new Geometry().offset(destX, destY))
+
+    return this
+  }
+
+  copyExt(sourceFn: (g: Geometry) => Geometry, destFn: (g: Geometry) => Geometry): this {
+    this.#commands.push('-copy')
+    this.#commands.push(sourceFn(new Geometry()))
+    this.#commands.push(destFn(new Geometry()))
 
     return this
   }

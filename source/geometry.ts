@@ -144,9 +144,9 @@ class Geometry {
     return parts.join('')
   }
 
-  #data?: GeometryData = undefined
-  #offset?: { x: number, y: number }
-  #flag?: '^' | '!' | '<' | '>' | '#'
+  #data: GeometryData | undefined = undefined
+  #offset: { x: number, y: number } | undefined = undefined
+  #flag: '^' | '!' | '<' | '>' | '#' | undefined = undefined
 }
 
 type GeometryData = GeometrySizeData | GeometryScaleData | GeometryRatioData | GeometryAreaData
