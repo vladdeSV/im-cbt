@@ -1,5 +1,5 @@
-import { Draw } from './draw'
-import { Geometry } from './geometry'
+import { Draw } from './draw.ts'
+import { Geometry } from './geometry.ts'
 import type {
   AlphaType,
   AutoThresholdType,
@@ -36,7 +36,7 @@ import type {
   StretchType,
   StyleType,
   VirtualPixelType,
-} from './predefines'
+} from './predefines.ts'
 
 export { ImageMagickCommandBuilder }
 

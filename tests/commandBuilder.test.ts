@@ -1,5 +1,5 @@
 import { expect, test } from 'bun:test'
-import { ImageMagickCommandBuilder as IMCB } from '../source/commandBuilder'
+import { ImageMagickCommandBuilder as IMCB } from '../source/commandBuilder.ts'
 
 test('empty command', () => {
   const command = new IMCB()

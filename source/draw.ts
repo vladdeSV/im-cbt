@@ -1,4 +1,4 @@
-import type { GravityType } from './predefines'
+import type { GravityType } from './predefines.ts'
 
 export class Draw {
   #primitives: string[] = []

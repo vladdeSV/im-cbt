@@ -2,7 +2,7 @@ import { spawnSync } from 'bun'
 import { expect, test } from 'bun:test'
 import { execSync } from 'node:child_process'
 import { readdirSync, rmSync } from 'node:fs'
-import IM from '../source/index'
+import IM from '../source/index.ts'
 
 // clean up any existing injection test files
 try {
@@ -153,10 +153,11 @@ test('draw parameter escaping', () => {
     // test that draw content is properly escaped
     const parts = im.parts('escape-shell')
     const drawParam = parts[parts.indexOf('-draw') + 1]
+    expect(drawParam).toBeDefined()
 
     // should be wrapped in single quotes for shell safety
-    expect(drawParam.startsWith("'")).toBe(true)
-    expect(drawParam.endsWith("'")).toBe(true)
+    expect(drawParam!.startsWith("'")).toBe(true)
+    expect(drawParam!.endsWith("'")).toBe(true)
 
     // should execute successfully
     const cmd = ['magick', ...parts].join(' ')

@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test'
-import { Geometry } from '../source/geometry'
+import { Geometry } from '../source/geometry.ts'
 
 const validOffsets: [number, number, string][] = [
   [0, 0, '+0+0'],

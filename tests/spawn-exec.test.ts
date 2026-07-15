@@ -2,7 +2,7 @@ import { spawnSync } from 'bun'
 import { expect, test } from 'bun:test'
 import { execSync } from 'node:child_process'
 import { readdir } from 'node:fs/promises'
-import IM from '../source/index'
+import IM from '../source/index.ts'
 
 const files = (await readdir('tests/patterns')).filter(x => x.startsWith('seq-') && x.endsWith('.png'))
 
@@ -11,7 +11,7 @@ for (const filename of files) {
   const chunks: string[] = []
 
   for (let i = 0; i < testseq.length; i += 2) {
-    chunks.push(testseq[i] + testseq[i + 1])
+    chunks.push(testseq.slice(i, i + 2))
   }
 
   const seq = chunks
