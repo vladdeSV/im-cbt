@@ -47,13 +47,9 @@ test('spawn vs exec consistency', () => {
     const execCmd = ['magick', ...im.parts('escape-shell'), execOut].join(' ')
     expect(() => execSync(execCmd)).not.toThrow()
 
-    // verify files are identical (with md5 lol)
-    const spawnHash = spawnSync(['md5sum', spawnOut])
-    const execHash = execSync(`md5sum ${execOut}`)
-
-    const md5spawn = spawnHash.stdout.toString().slice(0, 32)
-    const md5exec = execHash.toString().slice(0, 32)
-    expect(md5spawn).toBe(md5exec)
+    const compareResult = spawnSync(['magick', 'compare', '-metric', 'AE', spawnOut, execOut, 'null:'])
+    const diffPixelCount = parseInt((compareResult.stderr ?? Buffer.from('')).toString().trim(), 10)
+    expect(diffPixelCount).toBe(0)
 
     // clean up
     rmSync(spawnOut, { force: true })

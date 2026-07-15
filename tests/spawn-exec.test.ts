@@ -43,21 +43,16 @@ for (const filename of files) {
     const spawnOutFile = 'tests/patterns/test-spawn-' + chunks.join('') + '.png'
     const execOutFile = 'tests/patterns/test-exec-' + chunks.join('') + '.png'
 
-    // Test spawn execution (no shell) - should not fail due to formatting
     const spawnResult = spawnSync(['magick', ...im.parts('allow-unsafe'), spawnOutFile])
     expect(spawnResult.exitCode).toBe(0)
 
-    // Test exec execution (with shell) - should not fail due to formatting
     const execCmd = ['magick', ...im.parts('escape-shell'), execOutFile].join(' ')
     expect(() => execSync(execCmd)).not.toThrow()
 
-    // Verify both outputs are identical to each other
-    const { stdout: spawnHash } = spawnSync(['md5sum', spawnOutFile])
-    const execHash = execSync(`md5sum '${execOutFile}'`)
+    const compareResult = spawnSync(['magick', 'compare', '-metric', 'AE', spawnOutFile, execOutFile, 'null:'])
+    const diffPixelCount = parseInt((compareResult.stderr ?? Buffer.from('')).toString().trim(), 10)
+    expect(diffPixelCount).toBe(0)
 
-    expect(spawnHash.toString().slice(0, 32)).toBe(execHash.toString().slice(0, 32))
-
-    // Clean up test files
     spawnSync(['rm', '-f', spawnOutFile, execOutFile])
   })
 }
