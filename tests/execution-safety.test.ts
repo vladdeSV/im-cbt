@@ -32,6 +32,7 @@ test('spawn vs exec consistency', () => {
     const im = IM()
       .size(200, 100)
       .xc('white')
+      .font('DejaVu-Sans')
       .pointsize(12)
       .fill('black')
       .draw(draw => draw.text(10, 20, text))
@@ -81,6 +82,7 @@ test('command injection prevention', () => {
     const im = IM()
       .size(100, 100)
       .xc('white')
+      .font('DejaVu-Sans')
       .draw(draw => draw.text(10, 10, maliciousInput))
       .command('info:')
 
@@ -116,6 +118,7 @@ test('formatting never causes failures', () => {
     const im = IM()
       .size(200, 100)
       .xc('white')
+      .font('DejaVu-Sans')
       .draw(draw => draw.text(10, 20, input))
       .command('info:')
 
@@ -147,6 +150,7 @@ test('draw parameter escaping', () => {
     const im = IM()
       .size(200, 100)
       .xc('white')
+      .font('DejaVu-Sans')
       .draw(draw => draw.text(10, 20, text))
       .command('info:')
 

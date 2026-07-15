@@ -35,6 +35,7 @@ for (const filename of files) {
     const im = IM()
       .size(200, 100)
       .xc('white')
+      .font('DejaVu-Sans')
       .pointsize(20)
       .fill('black')
       .draw(draw => draw.text(10, 20, `hello ${seq} world`))
