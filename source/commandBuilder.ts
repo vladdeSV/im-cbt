@@ -220,12 +220,13 @@ class ImageMagickCommandBuilder {
 
   geometry(x: number, y: number): this
   geometry(fn: (g: Geometry) => Geometry): this
-  geometry(xOrFn: number | ((g: Geometry) => Geometry), y?: number): this {
+  geometry(...args: [x: number, y: number] | [fn: (g: Geometry) => Geometry]): this {
     this.#commands.push('-geometry')
-    if (typeof xOrFn === 'function') {
-      this.#commands.push(xOrFn(new Geometry()))
+    if (args.length === 1) {
+      this.#commands.push(args[0](new Geometry()))
     } else {
-      this.#commands.push(new Geometry().offset(xOrFn, y!))
+      const [x, y] = args
+      this.#commands.push(new Geometry().offset(x, y))
     }
     return this
   }
@@ -1107,7 +1108,12 @@ class ImageMagickCommandBuilder {
 
   liquidRescale(width: number, height?: number, deltaX?: number, rigidity?: number): this
   liquidRescale(fn: (g: Geometry) => Geometry): this
-  liquidRescale(widthOrFn: number | ((g: Geometry) => Geometry), height?: number, deltaX?: number, rigidity?: number): this {
+  liquidRescale(
+    widthOrFn: number | ((g: Geometry) => Geometry),
+    height?: number,
+    deltaX?: number,
+    rigidity?: number
+  ): this {
     this.#commands.push('-liquid-rescale')
     if (typeof widthOrFn === 'function') {
       this.#commands.push(widthOrFn(new Geometry()))
@@ -1588,12 +1594,13 @@ class ImageMagickCommandBuilder {
 
   splice(width: number, height: number, x: number, y: number): this
   splice(fn: (g: Geometry) => Geometry): this
-  splice(wOrFn: number | ((g: Geometry) => Geometry), h?: number, x?: number, y?: number): this {
+  splice(...args: [width: number, height: number, x: number, y: number] | [fn: (g: Geometry) => Geometry]): this {
     this.#commands.push('-splice')
-    if (typeof wOrFn === 'function') {
-      this.#commands.push(wOrFn(new Geometry()))
+    if (args.length === 1) {
+      this.#commands.push(args[0](new Geometry()))
     } else {
-      this.#commands.push(new Geometry().size(wOrFn, h).offset(x!, y!))
+      const [width, height, x, y] = args
+      this.#commands.push(new Geometry().size(width, height).offset(x, y))
     }
     return this
   }
@@ -2357,21 +2364,19 @@ class ImageMagickCommandBuilder {
   copy(width: number, height: number, sourceX: number, sourceY: number, destX: number, destY: number): this
   copy(source: (g: Geometry) => Geometry, destination: (g: Geometry) => Geometry): this
   copy(
-    widthOrSource: number | ((g: Geometry) => Geometry),
-    heightOrDestination?: number | ((g: Geometry) => Geometry),
-    sourceX?: number,
-    sourceY?: number,
-    destX?: number,
-    destY?: number
+    ...args:
+      | [width: number, height: number, sourceX: number, sourceY: number, destX: number, destY: number]
+      | [source: (g: Geometry) => Geometry, destination: (g: Geometry) => Geometry]
   ): this {
     this.#commands.push('-copy')
-    if (typeof widthOrSource === 'function') {
-      const destination = heightOrDestination as (g: Geometry) => Geometry
-      this.#commands.push(widthOrSource(new Geometry()))
+    if (args.length === 2) {
+      const [source, destination] = args
+      this.#commands.push(source(new Geometry()))
       this.#commands.push(destination(new Geometry()))
     } else {
-      this.#commands.push(new Geometry().size(widthOrSource, heightOrDestination as number).offset(sourceX!, sourceY!))
-      this.#commands.push(new Geometry().offset(destX!, destY!))
+      const [width, height, sourceX, sourceY, destX, destY] = args
+      this.#commands.push(new Geometry().size(width, height).offset(sourceX, sourceY))
+      this.#commands.push(new Geometry().offset(destX, destY))
     }
     return this
   }

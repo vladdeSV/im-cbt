@@ -26,7 +26,7 @@ for (const filename of files) {
         case 'ab':
           return 'ab'
         default:
-          throw 'unknown seq ' + ab
+          throw `unknown seq ${ab}`
       }
     })
     .join('')
@@ -40,8 +40,8 @@ for (const filename of files) {
       .fill('black')
       .draw(draw => draw.text(10, 20, `hello ${seq} world`))
 
-    const spawnOutFile = 'tests/patterns/test-spawn-' + chunks.join('') + '.png'
-    const execOutFile = 'tests/patterns/test-exec-' + chunks.join('') + '.png'
+    const spawnOutFile = `tests/patterns/test-spawn-${chunks.join('')}.png`
+    const execOutFile = `tests/patterns/test-exec-${chunks.join('')}.png`
 
     const spawnResult = spawnSync(['magick', ...im.parts('allow-unsafe'), spawnOutFile])
     expect(spawnResult.exitCode).toBe(0)

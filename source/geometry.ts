@@ -145,27 +145,27 @@ class Geometry {
   }
 
   #data: GeometryData | undefined = undefined
-  #offset: { x: number, y: number } | undefined = undefined
+  #offset: { x: number; y: number } | undefined = undefined
   #flag: '^' | '!' | '<' | '>' | '#' | undefined = undefined
 }
 
 type GeometryData = GeometrySizeData | GeometryScaleData | GeometryRatioData | GeometryAreaData
 type GeometrySizeData = {
-  type: 'size',
-  width: number | undefined,
-  height: number | undefined,
+  type: 'size'
+  width: number | undefined
+  height: number | undefined
 }
 type GeometryScaleData = {
-  type: 'scale',
-  x: number,
-  y: number | undefined,
+  type: 'scale'
+  x: number
+  y: number | undefined
 }
 type GeometryRatioData = {
-  type: 'ratio',
-  x: number,
-  y: number,
+  type: 'ratio'
+  x: number
+  y: number
 }
 type GeometryAreaData = {
-  type: 'area',
-  area: number,
+  type: 'area'
+  area: number
 }

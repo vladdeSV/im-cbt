@@ -224,10 +224,7 @@ test('adaptive-resize method', () => {
 test('adaptive-resize with callback', () => {
   // adaptive-resize with percentage scaling
   expect(new IMCB().adaptiveResize(g => g.scale(50)).parts('allow-unsafe')).toEqual(['-adaptive-resize', '50%'])
-  expect(new IMCB().adaptiveResize(g => g.scale(75, 80)).parts('allow-unsafe')).toEqual([
-    '-adaptive-resize',
-    '75%x80%',
-  ])
+  expect(new IMCB().adaptiveResize(g => g.scale(75, 80)).parts('allow-unsafe')).toEqual(['-adaptive-resize', '75%x80%'])
 
   // adaptive-resize with size and flag
   expect(new IMCB().adaptiveResize(g => g.size(200, 100).flag('!')).parts('allow-unsafe')).toEqual([
@@ -1481,15 +1478,24 @@ test('meanShift with percent distance', () => {
 })
 
 test('extract with callback', () => {
-  expect(new IMCB().extract(g => g.size(100, 100).offset(50, 25)).parts('allow-unsafe')).toEqual(['-extract', '100x100+50+25'])
+  expect(new IMCB().extract(g => g.size(100, 100).offset(50, 25)).parts('allow-unsafe')).toEqual([
+    '-extract',
+    '100x100+50+25',
+  ])
 })
 
 test('interpolativeResize with callback', () => {
-  expect(new IMCB().interpolativeResize(g => g.size(200, 100)).parts('allow-unsafe')).toEqual(['-interpolative-resize', '200x100'])
+  expect(new IMCB().interpolativeResize(g => g.size(200, 100)).parts('allow-unsafe')).toEqual([
+    '-interpolative-resize',
+    '200x100',
+  ])
 })
 
 test('liquidRescale with callback', () => {
-  expect(new IMCB().liquidRescale(g => g.size(150, 200).offset(3, 1)).parts('allow-unsafe')).toEqual(['-liquid-rescale', '150x200+3+1'])
+  expect(new IMCB().liquidRescale(g => g.size(150, 200).offset(3, 1)).parts('allow-unsafe')).toEqual([
+    '-liquid-rescale',
+    '150x200+3+1',
+  ])
 })
 
 test('page with callback', () => {
@@ -1497,7 +1503,10 @@ test('page with callback', () => {
 })
 
 test('repage with callback', () => {
-  expect(new IMCB().repage(g => g.size(100, 100).offset(0, 0)).parts('allow-unsafe')).toEqual(['-repage', '100x100+0+0'])
+  expect(new IMCB().repage(g => g.size(100, 100).offset(0, 0)).parts('allow-unsafe')).toEqual([
+    '-repage',
+    '100x100+0+0',
+  ])
 })
 
 test('sample with callback', () => {
@@ -1511,7 +1520,12 @@ test('scale with callback', () => {
 test('copy method', () => {
   expect(new IMCB().copy(10, 10, 0, 0, 50, 50).parts('allow-unsafe')).toEqual(['-copy', '10x10+0+0', '+50+50'])
   expect(
-    new IMCB().copy(g => g.size(10, 10).offset(0, 0), g => g.offset(50, 50)).parts('allow-unsafe')
+    new IMCB()
+      .copy(
+        g => g.size(10, 10).offset(0, 0),
+        g => g.offset(50, 50)
+      )
+      .parts('allow-unsafe')
   ).toEqual(['-copy', '10x10+0+0', '+50+50'])
 })
 

@@ -156,8 +156,8 @@ test('draw parameter escaping', () => {
     expect(drawParam).toBeDefined()
 
     // should be wrapped in single quotes for shell safety
-    expect(drawParam!.startsWith("'")).toBe(true)
-    expect(drawParam!.endsWith("'")).toBe(true)
+    expect(drawParam?.startsWith("'")).toBe(true)
+    expect(drawParam?.endsWith("'")).toBe(true)
 
     // should execute successfully
     const cmd = ['magick', ...parts].join(' ')
