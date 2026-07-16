@@ -16,10 +16,12 @@ import type {
   EndianType,
   EvaluateType,
   FilterType,
+  FontWeightType,
   FunctionType,
   GravityType,
   GrayscaleType,
   IlluminantType,
+  ImageType,
   IntensityType,
   IntentType,
   InterlaceType,
@@ -36,7 +38,9 @@ import type {
   StatisticType,
   StretchType,
   StyleType,
+  UnitsType,
   VirtualPixelType,
+  WordBreakType,
 } from './predefines.ts'
 
 export { ImageMagickCommandBuilder }
@@ -50,9 +54,11 @@ class ImageMagickCommandBuilder {
 
   parts(mode: 'escape-shell' | 'allow-unsafe'): string[] {
     const a: string[] = []
-    for (const part of this.#commands) {
-      if (part instanceof ImageMagickCommandBuilder) {
-        a.push(...part.parts(mode))
+    let fd = FIRST_BUFFER_FD
+    for (const part of this.#flattenedCommands()) {
+      if (Buffer.isBuffer(part)) {
+        a.push(`fd:${fd}`)
+        fd += 1
       } else if (part instanceof Geometry) {
         a.push(part.toString())
       } else if (part instanceof Draw) {
@@ -72,8 +78,33 @@ class ImageMagickCommandBuilder {
     return a
   }
 
+  /**
+   * buffers in traversal order. index `i` is read from `fd:${3 + i}` by the
+   * spawned process, so wire each buffer into stdio slot `3 + i`
+   */
   fds(): Buffer[] {
-    return [...this.#buffers]
+    const buffers: Buffer[] = []
+    for (const part of this.#flattenedCommands()) {
+      if (Buffer.isBuffer(part)) {
+        buffers.push(part)
+      }
+    }
+
+    return buffers
+  }
+
+  /**
+   * yields commands depth-first with nested builders inlined. parts() and
+   * fds() share this traversal, so fd numbering and buffer order always agree
+   */
+  *#flattenedCommands(): Generator<string | number | Geometry | Draw | Buffer> {
+    for (const part of this.#commands) {
+      if (part instanceof ImageMagickCommandBuilder) {
+        yield* part.#flattenedCommands()
+      } else {
+        yield part
+      }
+    }
   }
 
   command(...commands: (string | number)[]): this {
@@ -83,16 +114,7 @@ class ImageMagickCommandBuilder {
   }
 
   resource(input: string | Buffer): this {
-    if (Buffer.isBuffer(input)) {
-      const bufferStartIndex = 3
-      const currentBufferLength = this.#buffers.length
-
-      this.#buffers.push(input)
-      const fdRef = `fd:${bufferStartIndex + currentBufferLength}`
-      this.#commands.push(fdRef)
-    } else {
-      this.#commands.push(input)
-    }
+    this.#commands.push(input)
 
     return this
   }
@@ -196,21 +218,15 @@ class ImageMagickCommandBuilder {
     return this
   }
 
-  geometry(x: number, y: number): this {
-    const geometry = new Geometry().offset(x, y)
-
+  geometry(x: number, y: number): this
+  geometry(fn: (g: Geometry) => Geometry): this
+  geometry(xOrFn: number | ((g: Geometry) => Geometry), y?: number): this {
     this.#commands.push('-geometry')
-    this.#commands.push(geometry)
-
-    return this
-  }
-
-  geometryExt(fn: (g: Geometry) => Geometry): this {
-    const geometry = fn(new Geometry())
-
-    this.#commands.push('-geometry')
-    this.#commands.push(geometry)
-
+    if (typeof xOrFn === 'function') {
+      this.#commands.push(xOrFn(new Geometry()))
+    } else {
+      this.#commands.push(new Geometry().offset(xOrFn, y!))
+    }
     return this
   }
 
@@ -236,61 +252,44 @@ class ImageMagickCommandBuilder {
     return this
   }
 
-  extent(w: number, h: number): this {
+  extent(w: number, h: number): this
+  extent(fn: (g: Geometry) => Geometry): this
+  extent(wOrFn: number | ((g: Geometry) => Geometry), h?: number): this {
     this.#commands.push('-extent')
-    this.#commands.push(new Geometry().size(w, h))
-
-    return this
-  }
-
-  extentExt(fn: (g: Geometry) => Geometry): this {
-    const geometry = fn(new Geometry())
-
-    this.#commands.push('-extent')
-    this.#commands.push(geometry)
-
-    return this
-  }
-
-  resize(w?: number, h?: number): this {
-    if (w === undefined && h === undefined) {
-      // todo: noop?
+    if (typeof wOrFn === 'function') {
+      this.#commands.push(wOrFn(new Geometry()))
     } else {
+      this.#commands.push(new Geometry().size(wOrFn, h))
+    }
+    return this
+  }
+
+  resize(w?: number, h?: number): this
+  resize(fn: (g: Geometry) => Geometry): this
+  resize(wOrFn?: number | ((g: Geometry) => Geometry), h?: number): this {
+    if (typeof wOrFn === 'function') {
       this.#commands.push('-resize')
-      this.#commands.push(new Geometry().size(w, h))
+      this.#commands.push(wOrFn(new Geometry()))
+    } else if (wOrFn !== undefined || h !== undefined) {
+      this.#commands.push('-resize')
+      this.#commands.push(new Geometry().size(wOrFn, h))
     }
-
     return this
   }
 
-  resizeExt(fn: (g: Geometry) => Geometry): this {
-    const geometry = fn(new Geometry())
-
-    this.#commands.push('-resize')
-    this.#commands.push(geometry)
-
-    return this
-  }
-
-  crop(w: number, h: number, x?: number, y?: number): this {
+  crop(w: number, h: number, x?: number, y?: number): this
+  crop(fn: (g: Geometry) => Geometry): this
+  crop(wOrFn: number | ((g: Geometry) => Geometry), h?: number, x?: number, y?: number): this {
     this.#commands.push('-crop')
-
-    const geometry = new Geometry().size(w, h)
-    if (x !== undefined && y !== undefined) {
-      geometry.offset(x, y)
+    if (typeof wOrFn === 'function') {
+      this.#commands.push(wOrFn(new Geometry()))
+    } else {
+      const geo = new Geometry().size(wOrFn, h)
+      if (x !== undefined && y !== undefined) {
+        geo.offset(x, y)
+      }
+      this.#commands.push(geo)
     }
-
-    this.#commands.push(geometry)
-
-    return this
-  }
-
-  cropExt(fn: (g: Geometry) => Geometry): this {
-    const geometry = fn(new Geometry())
-
-    this.#commands.push('-crop')
-    this.#commands.push(geometry)
-
     return this
   }
 
@@ -336,7 +335,7 @@ class ImageMagickCommandBuilder {
     this.#commands.push('-blur')
 
     if (sigma !== undefined) {
-      this.#commands.push(new Geometry().size(radius, sigma))
+      this.#commands.push(`${radius}x${sigma}`)
     } else {
       this.#commands.push(radius)
     }
@@ -348,7 +347,7 @@ class ImageMagickCommandBuilder {
     this.#commands.push('-sharpen')
 
     if (sigma !== undefined) {
-      this.#commands.push(new Geometry().size(radius, sigma))
+      this.#commands.push(`${radius}x${sigma}`)
     } else {
       this.#commands.push(radius)
     }
@@ -383,7 +382,7 @@ class ImageMagickCommandBuilder {
   }
 
   pointsize(size?: number): this {
-    if (size) {
+    if (size !== undefined) {
       this.#commands.push('-pointsize')
       this.#commands.push(size)
     } else {
@@ -447,21 +446,16 @@ class ImageMagickCommandBuilder {
     return this
   }
 
-  adaptiveResize(w?: number, h?: number): this {
-    if (w || h) {
+  adaptiveResize(w?: number, h?: number): this
+  adaptiveResize(fn: (g: Geometry) => Geometry): this
+  adaptiveResize(wOrFn?: number | ((g: Geometry) => Geometry), h?: number): this {
+    if (typeof wOrFn === 'function') {
       this.#commands.push('-adaptive-resize')
-      this.#commands.push(new Geometry().size(w, h))
+      this.#commands.push(wOrFn(new Geometry()))
+    } else if (wOrFn !== undefined || h !== undefined) {
+      this.#commands.push('-adaptive-resize')
+      this.#commands.push(new Geometry().size(wOrFn, h))
     }
-
-    return this
-  }
-
-  adaptiveResizeExt(fn: (g: Geometry) => Geometry): this {
-    const geometry = fn(new Geometry())
-
-    this.#commands.push('-adaptive-resize')
-    this.#commands.push(geometry)
-
     return this
   }
 
@@ -557,9 +551,15 @@ class ImageMagickCommandBuilder {
     return this
   }
 
-  annotate(degrees: number, text: string): this {
+  annotate(degrees: number, text: string): this
+  annotate(fn: (g: Geometry) => Geometry, text: string): this
+  annotate(degreesOrFn: number | ((g: Geometry) => Geometry), text: string): this {
     this.#commands.push('-annotate')
-    this.#commands.push(degrees)
+    if (typeof degreesOrFn === 'function') {
+      this.#commands.push(degreesOrFn(new Geometry()))
+    } else {
+      this.#commands.push(degreesOrFn)
+    }
     this.#commands.push(text)
 
     return this
@@ -598,11 +598,11 @@ class ImageMagickCommandBuilder {
     return this
   }
 
-  border(width: number, height?: number): this {
+  border(width: NumberOrPercent, height?: NumberOrPercent): this {
     this.#commands.push('-border')
 
     if (height !== undefined) {
-      this.#commands.push(new Geometry().size(width, height))
+      this.#commands.push(`${width}x${height}`)
     } else {
       this.#commands.push(width)
     }
@@ -696,9 +696,9 @@ class ImageMagickCommandBuilder {
     return this
   }
 
-  brightnessContrast(brightness: NumberOrPercent, contrast: NumberOrPercent): this {
+  brightnessContrast(brightness: NumberOrPercent, contrast?: NumberOrPercent): this {
     this.#commands.push('-brightness-contrast')
-    this.#commands.push(`${brightness}x${contrast}`)
+    this.#commands.push(contrast === undefined ? brightness : `${brightness}x${contrast}`)
 
     return this
   }
@@ -726,16 +726,19 @@ class ImageMagickCommandBuilder {
     return this
   }
 
-  chop(width: number, height: number, x?: number, y?: number): this {
+  chop(width: number, height: number, x?: number, y?: number): this
+  chop(fn: (g: Geometry) => Geometry): this
+  chop(wOrFn: number | ((g: Geometry) => Geometry), h?: number, x?: number, y?: number): this {
     this.#commands.push('-chop')
-
-    const geometry = new Geometry().size(width, height)
-    if (x !== undefined && y !== undefined) {
-      geometry.offset(x, y)
+    if (typeof wOrFn === 'function') {
+      this.#commands.push(wOrFn(new Geometry()))
+    } else {
+      const geo = new Geometry().size(wOrFn, h)
+      if (x !== undefined && y !== undefined) {
+        geo.offset(x, y)
+      }
+      this.#commands.push(geo)
     }
-
-    this.#commands.push(geometry)
-
     return this
   }
 
@@ -850,26 +853,36 @@ class ImageMagickCommandBuilder {
     return this
   }
 
-  define(key: string, remove?: boolean): this {
-    if (remove === true) {
-      this.#commands.push('+define')
-      this.#commands.push(key)
-    } else {
-      this.#commands.push('-define')
-      this.#commands.push(key)
-    }
+  define(key: string, value?: string | number): this {
+    this.#commands.push('-define')
+    this.#commands.push(value === undefined ? key : `${key}=${value}`)
 
     return this
   }
 
-  delay(value: number | string, modifier?: '>' | '<'): this {
+  /** `+define key` removes an existing definition; pass `'*'` to remove all */
+  undefine(key: string): this {
+    this.#commands.push('+define')
+    this.#commands.push(key)
+
+    return this
+  }
+
+  delay(ticks: number, modifier?: '>' | '<'): this
+  delay(ticks: number, ticksPerSecond: number, modifier?: '>' | '<'): this
+  delay(ticks: number, tpsOrModifier?: number | '>' | '<', modifier?: '>' | '<'): this {
     this.#commands.push('-delay')
 
-    if (modifier) {
-      this.#commands.push(`${value}${modifier}`)
-    } else {
-      this.#commands.push(value)
+    let spec = `${ticks}`
+    if (typeof tpsOrModifier === 'number') {
+      spec += `x${tpsOrModifier}`
+      if (modifier) {
+        spec += modifier
+      }
+    } else if (tpsOrModifier) {
+      spec += tpsOrModifier
     }
+    this.#commands.push(spec)
 
     return this
   }
@@ -957,17 +970,15 @@ class ImageMagickCommandBuilder {
     return this
   }
 
-  extract(geometry: string): this {
+  extract(geometry: string): this
+  extract(fn: (g: Geometry) => Geometry): this
+  extract(geoOrFn: string | ((g: Geometry) => Geometry)): this {
     this.#commands.push('-extract')
-    this.#commands.push(geometry)
-
-    return this
-  }
-
-  extractExt(fn: (g: Geometry) => Geometry): this {
-    this.#commands.push('-extract')
-    this.#commands.push(fn(new Geometry()))
-
+    if (typeof geoOrFn === 'function') {
+      this.#commands.push(geoOrFn(new Geometry()))
+    } else {
+      this.#commands.push(geoOrFn)
+    }
     return this
   }
 
@@ -985,18 +996,21 @@ class ImageMagickCommandBuilder {
     return this
   }
 
-  frame(width: number, height: number, outerBevel?: number, innerBevel?: number): this {
+  frame(width: NumberOrPercent, height?: NumberOrPercent, outerBevel?: number, innerBevel?: number): this {
     this.#commands.push('-frame')
 
-    let frameSpec = `${width}x${height}`
+    let spec = `${width}`
+    if (height !== undefined) {
+      spec += `x${height}`
+    }
     if (outerBevel !== undefined) {
-      frameSpec += `+${outerBevel}`
+      spec += signedOffset(outerBevel)
       if (innerBevel !== undefined) {
-        frameSpec += `+${innerBevel}`
+        spec += signedOffset(innerBevel)
       }
     }
 
-    this.#commands.push(frameSpec)
+    this.#commands.push(spec)
 
     return this
   }
@@ -1051,7 +1065,7 @@ class ImageMagickCommandBuilder {
 
   lat(width: number, height: number, offset?: NumberOrPercent): this {
     this.#commands.push('-lat')
-    this.#commands.push(offset === undefined ? `${width}x${height}` : `${width}x${height}+${offset}`)
+    this.#commands.push(offset === undefined ? `${width}x${height}` : `${width}x${height}${signedOffset(offset)}`)
 
     return this
   }
@@ -1091,29 +1105,25 @@ class ImageMagickCommandBuilder {
     return this
   }
 
-  liquidRescale(width: number, height?: number, deltaX?: number, rigidity?: number): this {
+  liquidRescale(width: number, height?: number, deltaX?: number, rigidity?: number): this
+  liquidRescale(fn: (g: Geometry) => Geometry): this
+  liquidRescale(widthOrFn: number | ((g: Geometry) => Geometry), height?: number, deltaX?: number, rigidity?: number): this {
     this.#commands.push('-liquid-rescale')
-
-    let rescaleSpec = `${width}`
-    if (height !== undefined) {
-      rescaleSpec += `x${height}`
-      if (deltaX !== undefined) {
-        rescaleSpec += `+${deltaX}`
-        if (rigidity !== undefined) {
-          rescaleSpec += `+${rigidity}`
+    if (typeof widthOrFn === 'function') {
+      this.#commands.push(widthOrFn(new Geometry()))
+    } else {
+      let rescaleSpec = `${widthOrFn}`
+      if (height !== undefined) {
+        rescaleSpec += `x${height}`
+        if (deltaX !== undefined) {
+          rescaleSpec += signedOffset(deltaX)
+          if (rigidity !== undefined) {
+            rescaleSpec += signedOffset(rigidity)
+          }
         }
       }
+      this.#commands.push(rescaleSpec)
     }
-
-    this.#commands.push(rescaleSpec)
-
-    return this
-  }
-
-  liquidRescaleExt(fn: (g: Geometry) => Geometry): this {
-    this.#commands.push('-liquid-rescale')
-    this.#commands.push(fn(new Geometry()))
-
     return this
   }
 
@@ -1187,20 +1197,27 @@ class ImageMagickCommandBuilder {
       spec += `x${sigma}`
     }
     if (angle !== undefined) {
-      spec += `+${angle}`
+      spec += signedOffset(angle)
     }
     this.#commands.push(spec)
 
     return this
   }
 
-  noise(type?: NoiseType): this {
-    if (type) {
+  /**
+   * `-noise radius` reduces noise using the given neighborhood radius.
+   * @deprecated `-noise radius` is replaced in ImageMagick. use `.statistic('NonPeak', width, height)` instead.
+   */
+  noise(radius: number): this
+  /** `+noise type` adds noise of the given type */
+  noise(type: NoiseType): this
+  noise(radiusOrType: number | NoiseType): this {
+    if (typeof radiusOrType === 'number') {
       this.#commands.push('-noise')
-      this.#commands.push(type)
     } else {
       this.#commands.push('+noise')
     }
+    this.#commands.push(radiusOrType)
 
     return this
   }
@@ -1219,21 +1236,19 @@ class ImageMagickCommandBuilder {
     return this
   }
 
-  page(geometry?: string): this {
-    if (geometry) {
+  page(): this
+  page(geometry: string): this
+  page(fn: (g: Geometry) => Geometry): this
+  page(geoOrFn?: string | ((g: Geometry) => Geometry)): this {
+    if (typeof geoOrFn === 'function') {
       this.#commands.push('-page')
-      this.#commands.push(geometry)
+      this.#commands.push(geoOrFn(new Geometry()))
+    } else if (geoOrFn !== undefined) {
+      this.#commands.push('-page')
+      this.#commands.push(geoOrFn)
     } else {
       this.#commands.push('+page')
     }
-
-    return this
-  }
-
-  pageExt(fn: (g: Geometry) => Geometry): this {
-    this.#commands.push('-page')
-    this.#commands.push(fn(new Geometry()))
-
     return this
   }
 
@@ -1272,13 +1287,10 @@ class ImageMagickCommandBuilder {
     return this
   }
 
-  profile(filename?: string): this {
-    if (filename) {
-      this.#commands.push('-profile')
-      this.#commands.push(filename)
-    } else {
-      this.#commands.push('+profile')
-    }
+  /** with `remove`, emits `+profile name` where name may be a glob like `'!icc,*'` or `'*'` */
+  profile(filename: string, remove?: boolean): this {
+    this.#commands.push(remove === true ? '+profile' : '-profile')
+    this.#commands.push(filename)
 
     return this
   }
@@ -1368,21 +1380,19 @@ class ImageMagickCommandBuilder {
     return this
   }
 
-  repage(geometry?: string): this {
-    if (geometry) {
+  repage(): this
+  repage(geometry: string): this
+  repage(fn: (g: Geometry) => Geometry): this
+  repage(geoOrFn?: string | ((g: Geometry) => Geometry)): this {
+    if (typeof geoOrFn === 'function') {
       this.#commands.push('-repage')
-      this.#commands.push(geometry)
+      this.#commands.push(geoOrFn(new Geometry()))
+    } else if (geoOrFn !== undefined) {
+      this.#commands.push('-repage')
+      this.#commands.push(geoOrFn)
     } else {
       this.#commands.push('+repage')
     }
-
-    return this
-  }
-
-  repageExt(fn: (g: Geometry) => Geometry): this {
-    this.#commands.push('-repage')
-    this.#commands.push(fn(new Geometry()))
-
     return this
   }
 
@@ -1395,22 +1405,20 @@ class ImageMagickCommandBuilder {
 
   roll(x: number, y: number): this {
     this.#commands.push('-roll')
-    this.#commands.push(`${x > 0 ? '+' : ''}${x}${y > 0 ? '+' : ''}${y}`)
+    this.#commands.push(new Geometry().offset(x, y))
 
     return this
   }
 
-  sample(geometry: string): this {
+  sample(geometry: string): this
+  sample(fn: (g: Geometry) => Geometry): this
+  sample(geoOrFn: string | ((g: Geometry) => Geometry)): this {
     this.#commands.push('-sample')
-    this.#commands.push(geometry)
-
-    return this
-  }
-
-  sampleExt(fn: (g: Geometry) => Geometry): this {
-    this.#commands.push('-sample')
-    this.#commands.push(fn(new Geometry()))
-
+    if (typeof geoOrFn === 'function') {
+      this.#commands.push(geoOrFn(new Geometry()))
+    } else {
+      this.#commands.push(geoOrFn)
+    }
     return this
   }
 
@@ -1421,17 +1429,15 @@ class ImageMagickCommandBuilder {
     return this
   }
 
-  scale(geometry: string): this {
+  scale(geometry: string): this
+  scale(fn: (g: Geometry) => Geometry): this
+  scale(geoOrFn: string | ((g: Geometry) => Geometry)): this {
     this.#commands.push('-scale')
-    this.#commands.push(geometry)
-
-    return this
-  }
-
-  scaleExt(fn: (g: Geometry) => Geometry): this {
-    this.#commands.push('-scale')
-    this.#commands.push(fn(new Geometry()))
-
+    if (typeof geoOrFn === 'function') {
+      this.#commands.push(geoOrFn(new Geometry()))
+    } else {
+      this.#commands.push(geoOrFn)
+    }
     return this
   }
 
@@ -1463,7 +1469,7 @@ class ImageMagickCommandBuilder {
       spec += `x${sigma}`
     }
     if (threshold !== undefined) {
-      spec += `+${threshold}`
+      spec += signedOffset(threshold)
     }
     this.#commands.push(spec)
 
@@ -1507,36 +1513,38 @@ class ImageMagickCommandBuilder {
     return this
   }
 
-  shadow(radius: number = 0, sigma?: number, x?: number, y?: number): this {
+  shadow(opacity: number, sigma?: number, x?: number, y?: number): this {
     this.#commands.push('-shadow')
-    let spec = `${radius}`
+    let spec = `${opacity}`
     if (sigma !== undefined) {
       spec += `x${sigma}`
     }
     if (x !== undefined && y !== undefined) {
-      spec += `+${x}+${y}`
+      spec += `${signedOffset(x)}${signedOffset(y)}`
     }
     this.#commands.push(spec)
 
     return this
   }
 
-  shave(width: number, height: number): this {
+  shave(width: NumberOrPercent, height: NumberOrPercent): this {
     this.#commands.push('-shave')
-    this.#commands.push(new Geometry().size(width, height))
+    this.#commands.push(`${width}x${height}`)
 
     return this
   }
 
-  shear(xDegrees: number, yDegrees: number): this {
+  /** when yDegrees is omitted, imagemagick defaults it to xDegrees */
+  shear(xDegrees: number, yDegrees?: number): this {
     this.#commands.push('-shear')
-    this.#commands.push(`${xDegrees}x${yDegrees}`)
+    this.#commands.push(yDegrees === undefined ? xDegrees : `${xDegrees}x${yDegrees}`)
 
     return this
   }
 
+  /** `sharpen: false` emits `+sigmoidal-contrast`, which decreases contrast instead of increasing it */
   sigmoidalContrast(contrast: number, midpoint: NumberOrPercent, sharpen?: boolean): this {
-    if (sharpen === true) {
+    if (sharpen === false) {
       this.#commands.push('+sigmoidal-contrast')
     } else {
       this.#commands.push('-sigmoidal-contrast')
@@ -1553,18 +1561,18 @@ class ImageMagickCommandBuilder {
       spec += `x${sigma}`
     }
     if (angle !== undefined) {
-      spec += `+${angle}`
+      spec += signedOffset(angle)
     }
     this.#commands.push(spec)
 
     return this
   }
 
-  smush(offset: number, vertical?: boolean): this {
-    if (vertical === true) {
-      this.#commands.push('-smush')
-    } else {
+  smush(offset: number, horizontal?: boolean): this {
+    if (horizontal === true) {
       this.#commands.push('+smush')
+    } else {
+      this.#commands.push('-smush')
     }
     this.#commands.push(offset)
 
@@ -1578,10 +1586,15 @@ class ImageMagickCommandBuilder {
     return this
   }
 
-  splice(width: number, height: number, x: number, y: number): this {
+  splice(width: number, height: number, x: number, y: number): this
+  splice(fn: (g: Geometry) => Geometry): this
+  splice(wOrFn: number | ((g: Geometry) => Geometry), h?: number, x?: number, y?: number): this {
     this.#commands.push('-splice')
-    this.#commands.push(new Geometry().size(width, height).offset(x, y))
-
+    if (typeof wOrFn === 'function') {
+      this.#commands.push(wOrFn(new Geometry()))
+    } else {
+      this.#commands.push(new Geometry().size(wOrFn, h).offset(x!, y!))
+    }
     return this
   }
 
@@ -1660,21 +1673,16 @@ class ImageMagickCommandBuilder {
     return this
   }
 
-  thumbnail(w?: number, h?: number): this {
-    if (w || h) {
+  thumbnail(w?: number, h?: number): this
+  thumbnail(fn: (g: Geometry) => Geometry): this
+  thumbnail(wOrFn?: number | ((g: Geometry) => Geometry), h?: number): this {
+    if (typeof wOrFn === 'function') {
       this.#commands.push('-thumbnail')
-      this.#commands.push(new Geometry().size(w, h))
+      this.#commands.push(wOrFn(new Geometry()))
+    } else if (wOrFn !== undefined || h !== undefined) {
+      this.#commands.push('-thumbnail')
+      this.#commands.push(new Geometry().size(wOrFn, h))
     }
-
-    return this
-  }
-
-  thumbnailExt(fn: (g: Geometry) => Geometry): this {
-    const geometry = fn(new Geometry())
-
-    this.#commands.push('-thumbnail')
-    this.#commands.push(geometry)
-
     return this
   }
 
@@ -1691,6 +1699,7 @@ class ImageMagickCommandBuilder {
     return this
   }
 
+  /** @deprecated `-transform` is replaced in ImageMagick. use `.distort('AffineProjection', ...)` instead. */
   transform(): this {
     this.#commands.push('-transform')
 
@@ -1723,7 +1732,7 @@ class ImageMagickCommandBuilder {
     return this
   }
 
-  type(type: string): this {
+  type(type: ImageType): this {
     this.#commands.push('-type')
     this.#commands.push(type)
 
@@ -1743,23 +1752,23 @@ class ImageMagickCommandBuilder {
     return this
   }
 
-  units(type: string): this {
+  units(type: UnitsType): this {
     this.#commands.push('-units')
     this.#commands.push(type)
 
     return this
   }
 
-  unsharp(radius: number = 0, sigma?: number, amount?: number, threshold?: number): this {
+  unsharp(radius: number = 0, sigma?: number, gain?: number, threshold?: number): this {
     this.#commands.push('-unsharp')
     let spec = `${radius}`
     if (sigma !== undefined) {
       spec += `x${sigma}`
     }
-    if (amount !== undefined) {
-      spec += `+${amount}`
+    if (gain !== undefined) {
+      spec += signedOffset(gain)
       if (threshold !== undefined) {
-        spec += `+${threshold}`
+        spec += signedOffset(threshold)
       }
     }
     this.#commands.push(spec)
@@ -1767,11 +1776,11 @@ class ImageMagickCommandBuilder {
     return this
   }
 
-  verbose(enable: boolean = true): this {
-    if (enable === true) {
-      this.#commands.push('-verbose')
-    } else {
+  verbose(enable?: boolean): this {
+    if (enable === false) {
       this.#commands.push('+verbose')
+    } else {
+      this.#commands.push('-verbose')
     }
 
     return this
@@ -1783,25 +1792,18 @@ class ImageMagickCommandBuilder {
     return this
   }
 
-  /*
-  this command fails on my magick binary, v7.1.2
-  view(string: string): this {
-    this.#commands.push('-view')
-    this.#commands.push((string))
-
-    return this
-  }
-  */
-
-  vignette(radius: number = 0, sigma: number, x?: number, y?: number): this {
+  vignette(radius: number = 0, sigma?: number, x?: NumberOrPercent, y?: NumberOrPercent): this {
     this.#commands.push('-vignette')
 
-    let vignetteSpec = `${radius}x${sigma}`
+    let spec = `${radius}`
+    if (sigma !== undefined) {
+      spec += `x${sigma}`
+    }
     if (x !== undefined && y !== undefined) {
-      vignetteSpec += `+${x}+${y}`
+      spec += `${signedOffset(x)}${signedOffset(y)}`
     }
 
-    this.#commands.push(vignetteSpec)
+    this.#commands.push(spec)
 
     return this
   }
@@ -1813,9 +1815,9 @@ class ImageMagickCommandBuilder {
     return this
   }
 
-  weight(type: string): this {
+  weight(value: FontWeightType | number): this {
     this.#commands.push('-weight')
-    this.#commands.push(type)
+    this.#commands.push(value)
 
     return this
   }
@@ -1945,7 +1947,7 @@ class ImageMagickCommandBuilder {
     return this
   }
 
-  wordBreak(type: string): this {
+  wordBreak(type: WordBreakType): this {
     this.#commands.push('-word-break')
     this.#commands.push(type)
 
@@ -1985,13 +1987,6 @@ class ImageMagickCommandBuilder {
     return this
   }
 
-  support(factor: number): this {
-    this.#commands.push('-support')
-    this.#commands.push(factor)
-
-    return this
-  }
-
   synchronize(): this {
     this.#commands.push('-synchronize')
 
@@ -2014,12 +2009,6 @@ class ImageMagickCommandBuilder {
   transparentColor(color: string): this {
     this.#commands.push('-transparent-color')
     this.#commands.push(color)
-
-    return this
-  }
-
-  view(): this {
-    this.#commands.push('-view')
 
     return this
   }
@@ -2059,17 +2048,13 @@ class ImageMagickCommandBuilder {
     return this
   }
 
-  canny(radius: number, sigma: number): this {
+  canny(radius: number, sigma: number, lower?: NumberOrPercent, upper?: NumberOrPercent): this {
     this.#commands.push('-canny')
-    this.#commands.push(`${radius}x${sigma}`)
-
-    return this
-  }
-
-  cannyExt(radius: number, sigma: number, lower: NumberOrPercent, upper: NumberOrPercent): this {
-    this.#commands.push('-canny')
-    this.#commands.push(`${radius}x${sigma}+${lower}+${upper}`)
-
+    if (lower !== undefined && upper !== undefined) {
+      this.#commands.push(`${radius}x${sigma}${signedOffset(lower)}${signedOffset(upper)}`)
+    } else {
+      this.#commands.push(`${radius}x${sigma}`)
+    }
     return this
   }
 
@@ -2080,17 +2065,22 @@ class ImageMagickCommandBuilder {
     return this
   }
 
-  clahe(width: NumberOrPercent, height: NumberOrPercent): this {
+  clahe(width: NumberOrPercent, height: NumberOrPercent, tiles?: number, limit?: number): this
+  clahe(fn: (g: Geometry) => Geometry): this
+  clahe(
+    widthOrFn: NumberOrPercent | ((g: Geometry) => Geometry),
+    height?: NumberOrPercent,
+    tiles?: number,
+    limit?: number
+  ): this {
     this.#commands.push('-clahe')
-    this.#commands.push(`${width}x${height}`)
-
-    return this
-  }
-
-  claheExt(width: NumberOrPercent, height: NumberOrPercent, tiles: number, limit: number): this {
-    this.#commands.push('-clahe')
-    this.#commands.push(`${width}x${height}+${tiles}+${limit}`)
-
+    if (typeof widthOrFn === 'function') {
+      this.#commands.push(widthOrFn(new Geometry()))
+    } else if (tiles !== undefined && limit !== undefined) {
+      this.#commands.push(`${widthOrFn}x${height}${signedOffset(tiles)}${signedOffset(limit)}`)
+    } else {
+      this.#commands.push(`${widthOrFn}x${height}`)
+    }
     return this
   }
 
@@ -2114,7 +2104,7 @@ class ImageMagickCommandBuilder {
     return this
   }
 
-  connectedComponents(connectivity: number): this {
+  connectedComponents(connectivity: 4 | 8): this {
     this.#commands.push('-connected-components')
     this.#commands.push(connectivity)
 
@@ -2165,13 +2155,13 @@ class ImageMagickCommandBuilder {
   }
 
   houghLines(width: number, height: number, threshold?: number): this {
-    let command = `${width}x${height}`
+    let spec = `${width}x${height}`
     if (threshold !== undefined) {
-      command += `+${threshold}`
+      spec += signedOffset(threshold)
     }
 
     this.#commands.push('-hough-lines')
-    this.#commands.push(command)
+    this.#commands.push(spec)
 
     return this
   }
@@ -2188,22 +2178,17 @@ class ImageMagickCommandBuilder {
     return this
   }
 
-  interpolativeResize(width: number, height?: number): this {
+  interpolativeResize(width: number, height?: number): this
+  interpolativeResize(fn: (g: Geometry) => Geometry): this
+  interpolativeResize(widthOrFn: number | ((g: Geometry) => Geometry), height?: number): this {
     this.#commands.push('-interpolative-resize')
-
-    if (height !== undefined) {
-      this.#commands.push(`${width}x${height}`)
+    if (typeof widthOrFn === 'function') {
+      this.#commands.push(widthOrFn(new Geometry()))
+    } else if (height !== undefined) {
+      this.#commands.push(`${widthOrFn}x${height}`)
     } else {
-      this.#commands.push(width)
+      this.#commands.push(widthOrFn)
     }
-
-    return this
-  }
-
-  interpolativeResizeExt(fn: (g: Geometry) => Geometry): this {
-    this.#commands.push('-interpolative-resize')
-    this.#commands.push(fn(new Geometry()))
-
     return this
   }
 
@@ -2214,7 +2199,7 @@ class ImageMagickCommandBuilder {
       spec += `x${iterations}`
     }
     if (tolerance !== undefined) {
-      spec += `+${tolerance}`
+      spec += signedOffset(tolerance)
     }
     this.#commands.push(spec)
 
@@ -2247,9 +2232,9 @@ class ImageMagickCommandBuilder {
     return this
   }
 
-  meanShift(width: number, height: number, distance: number): this {
+  meanShift(width: number, height: number, distance: NumberOrPercent): this {
     this.#commands.push('-mean-shift')
-    this.#commands.push(`${width}x${height}+${distance}`)
+    this.#commands.push(`${width}x${height}${signedOffset(distance)}`)
 
     return this
   }
@@ -2273,24 +2258,27 @@ class ImageMagickCommandBuilder {
     return this
   }
 
-  rangeThreshold(low: number, high: number): this {
+  rangeThreshold(
+    lowBlack: NumberOrPercent,
+    lowWhite: NumberOrPercent,
+    highWhite: NumberOrPercent,
+    highBlack: NumberOrPercent
+  ): this {
     this.#commands.push('-range-threshold')
-    this.#commands.push(`${low},${high}`)
+    this.#commands.push(`${lowBlack},${lowWhite},${highWhite},${highBlack}`)
 
     return this
   }
 
-  region(width: number, height: number): this {
+  region(width: number, height: number): this
+  region(fn: (g: Geometry) => Geometry): this
+  region(widthOrFn: number | ((g: Geometry) => Geometry), height?: number): this {
     this.#commands.push('-region')
-    this.#commands.push(`${width}x${height}`)
-
-    return this
-  }
-
-  regionExt(fn: (g: Geometry) => Geometry): this {
-    this.#commands.push('-region')
-    this.#commands.push(fn(new Geometry()))
-
+    if (typeof widthOrFn === 'function') {
+      this.#commands.push(widthOrFn(new Geometry()))
+    } else {
+      this.#commands.push(new Geometry().size(widthOrFn, height))
+    }
     return this
   }
 
@@ -2366,11 +2354,25 @@ class ImageMagickCommandBuilder {
     return this
   }
 
-  copy(width: number, height: number, sourceX: number, sourceY: number, destX: number, destY: number): this {
+  copy(width: number, height: number, sourceX: number, sourceY: number, destX: number, destY: number): this
+  copy(source: (g: Geometry) => Geometry, destination: (g: Geometry) => Geometry): this
+  copy(
+    widthOrSource: number | ((g: Geometry) => Geometry),
+    heightOrDestination?: number | ((g: Geometry) => Geometry),
+    sourceX?: number,
+    sourceY?: number,
+    destX?: number,
+    destY?: number
+  ): this {
     this.#commands.push('-copy')
-    this.#commands.push(new Geometry().size(width, height).offset(sourceX, sourceY))
-    this.#commands.push(new Geometry().offset(destX, destY))
-
+    if (typeof widthOrSource === 'function') {
+      const destination = heightOrDestination as (g: Geometry) => Geometry
+      this.#commands.push(widthOrSource(new Geometry()))
+      this.#commands.push(destination(new Geometry()))
+    } else {
+      this.#commands.push(new Geometry().size(widthOrSource, heightOrDestination as number).offset(sourceX!, sourceY!))
+      this.#commands.push(new Geometry().offset(destX!, destY!))
+    }
     return this
   }
 
@@ -2442,18 +2444,23 @@ class ImageMagickCommandBuilder {
     return this
   }
 
-  usage(): this {
-    this.#commands.push('-usage')
-
-    return this
-  }
-
   #escape(data: unknown): string {
     return escapeString(data)
   }
 
-  #commands: (string | number | Geometry | ImageMagickCommandBuilder | Draw)[] = []
-  #buffers: Buffer[] = []
+  #commands: (string | number | Geometry | ImageMagickCommandBuilder | Draw | Buffer)[] = []
+}
+
+/** fds 0-2 are stdin/stdout/stderr; buffers get the descriptors after those */
+const FIRST_BUFFER_FD = 3
+
+/**
+ * formats a continuation value of an imagemagick argument (`WxH+a+b`):
+ * `+` for zero/positive values, the value's own `-` for negatives
+ */
+function signedOffset(value: NumberOrPercent): string {
+  const str = String(value)
+  return str.startsWith('-') ? str : `+${str}`
 }
 
 function escapeString(data: unknown): string {

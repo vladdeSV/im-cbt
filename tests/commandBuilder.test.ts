@@ -60,13 +60,13 @@ test('crop method variations', () => {
 
 test('crop with geometry function', () => {
   // using extended geometry function for crop
-  expect(new IMCB().cropExt(g => g.size(100, 100).offset(10, 10)).parts('allow-unsafe')).toEqual([
+  expect(new IMCB().crop(g => g.size(100, 100).offset(10, 10)).parts('allow-unsafe')).toEqual([
     '-crop',
     '100x100+10+10',
   ])
 
   // crop with percentage scaling
-  expect(new IMCB().cropExt(g => g.scale(50, 50).offset(0, 0)).parts('allow-unsafe')).toEqual(['-crop', '50%x50%+0+0'])
+  expect(new IMCB().crop(g => g.scale(50, 50).offset(0, 0)).parts('allow-unsafe')).toEqual(['-crop', '50%x50%+0+0'])
 })
 
 test('rotate method variations', () => {
@@ -117,6 +117,7 @@ test('alpha method', () => {
   expect(new IMCB().alpha('Set').parts('allow-unsafe')).toEqual(['-alpha', 'Set'])
   expect(new IMCB().alpha('Transparent').parts('allow-unsafe')).toEqual(['-alpha', 'Transparent'])
   expect(new IMCB().alpha('Off').parts('allow-unsafe')).toEqual(['-alpha', 'Off'])
+  expect(new IMCB().alpha('OffIfOpaque').parts('allow-unsafe')).toEqual(['-alpha', 'OffIfOpaque'])
 })
 
 test('clone method variations (must be in parens irl)', () => {
@@ -178,6 +179,7 @@ test('opaque method', () => {
 test('pointsize method', () => {
   expect(new IMCB().pointsize(12).parts('allow-unsafe')).toEqual(['-pointsize', '12'])
   expect(new IMCB().pointsize(24).parts('allow-unsafe')).toEqual(['-pointsize', '24'])
+  expect(new IMCB().pointsize(0).parts('allow-unsafe')).toEqual(['-pointsize', '0'])
   expect(new IMCB().pointsize().parts('allow-unsafe')).toEqual(['+pointsize'])
 })
 
@@ -187,9 +189,9 @@ test('resize method', () => {
   expect(new IMCB().resize(undefined, 100).parts('allow-unsafe')).toEqual(['-resize', 'x100'])
 })
 
-test('resizeExt method', () => {
-  expect(new IMCB().resizeExt(g => g.size(100, 100).flag('!')).parts('allow-unsafe')).toEqual(['-resize', '100x100!'])
-  expect(new IMCB().resizeExt(g => g.scale(50)).parts('allow-unsafe')).toEqual(['-resize', '50%'])
+test('resize with callback', () => {
+  expect(new IMCB().resize(g => g.size(100, 100).flag('!')).parts('allow-unsafe')).toEqual(['-resize', '100x100!'])
+  expect(new IMCB().resize(g => g.scale(50)).parts('allow-unsafe')).toEqual(['-resize', '50%'])
 })
 
 test('trim method', () => {
@@ -219,16 +221,16 @@ test('adaptive-resize method', () => {
   expect(new IMCB().adaptiveResize(undefined, 200).parts('allow-unsafe')).toEqual(['-adaptive-resize', 'x200'])
 })
 
-test('adaptive-resize-ext method', () => {
+test('adaptive-resize with callback', () => {
   // adaptive-resize with percentage scaling
-  expect(new IMCB().adaptiveResizeExt(g => g.scale(50)).parts('allow-unsafe')).toEqual(['-adaptive-resize', '50%'])
-  expect(new IMCB().adaptiveResizeExt(g => g.scale(75, 80)).parts('allow-unsafe')).toEqual([
+  expect(new IMCB().adaptiveResize(g => g.scale(50)).parts('allow-unsafe')).toEqual(['-adaptive-resize', '50%'])
+  expect(new IMCB().adaptiveResize(g => g.scale(75, 80)).parts('allow-unsafe')).toEqual([
     '-adaptive-resize',
     '75%x80%',
   ])
 
   // adaptive-resize with size and flag
-  expect(new IMCB().adaptiveResizeExt(g => g.size(200, 100).flag('!')).parts('allow-unsafe')).toEqual([
+  expect(new IMCB().adaptiveResize(g => g.size(200, 100).flag('!')).parts('allow-unsafe')).toEqual([
     '-adaptive-resize',
     '200x100!',
   ])
@@ -296,6 +298,18 @@ test('annotate method', () => {
   expect(new IMCB().annotate(0, 'Hello').parts('allow-unsafe')).toEqual(['-annotate', '0', 'Hello'])
   expect(new IMCB().annotate(45, 'Rotated Text').parts('allow-unsafe')).toEqual(['-annotate', '45', 'Rotated Text'])
   expect(new IMCB().annotate(-90, 'Vertical').parts('allow-unsafe')).toEqual(['-annotate', '-90', 'Vertical'])
+
+  // callback covers the geometry forms: offsets only, shears, or both
+  expect(new IMCB().annotate(g => g.offset(20, 20), 'Offset').parts('allow-unsafe')).toEqual([
+    '-annotate',
+    '+20+20',
+    'Offset',
+  ])
+  expect(new IMCB().annotate(g => g.size(15, 15).offset(20, 20), 'Sheared').parts('allow-unsafe')).toEqual([
+    '-annotate',
+    '15x15+20+20',
+    'Sheared',
+  ])
 })
 
 test('authenticate method', () => {
@@ -327,6 +341,8 @@ test('border method', () => {
   expect(new IMCB().border(10, 10).parts('allow-unsafe')).toEqual(['-border', '10x10'])
   expect(new IMCB().border(5, 8).parts('allow-unsafe')).toEqual(['-border', '5x8'])
   expect(new IMCB().border(15).parts('allow-unsafe')).toEqual(['-border', '15'])
+  expect(new IMCB().border('5%', '10%').parts('allow-unsafe')).toEqual(['-border', '5%x10%'])
+  expect(new IMCB().border('5%').parts('allow-unsafe')).toEqual(['-border', '5%'])
 })
 
 test('borderColor method', () => {
@@ -390,6 +406,7 @@ test('brightnessContrast method', () => {
   expect(new IMCB().brightnessContrast(-10, 20).parts('allow-unsafe')).toEqual(['-brightness-contrast', '-10x20'])
   expect(new IMCB().brightnessContrast(0, -5).parts('allow-unsafe')).toEqual(['-brightness-contrast', '0x-5'])
   expect(new IMCB().brightnessContrast('10%', '5%').parts('allow-unsafe')).toEqual(['-brightness-contrast', '10%x5%'])
+  expect(new IMCB().brightnessContrast(10).parts('allow-unsafe')).toEqual(['-brightness-contrast', '10'])
 })
 
 test('channel method', () => {
@@ -409,6 +426,7 @@ test('chop method', () => {
   expect(new IMCB().chop(10, 10, 5, 5).parts('allow-unsafe')).toEqual(['-chop', '10x10+5+5'])
   expect(new IMCB().chop(50, 50).parts('allow-unsafe')).toEqual(['-chop', '50x50'])
   expect(new IMCB().chop(20, 15, -10, -5).parts('allow-unsafe')).toEqual(['-chop', '20x15-10-5'])
+  expect(new IMCB().chop(g => g.scale(10, 10).offset(0, 0)).parts('allow-unsafe')).toEqual(['-chop', '10%x10%+0+0'])
 })
 
 test('compress method', () => {
@@ -497,21 +515,26 @@ test('debug method', () => {
 })
 
 test('define method', () => {
-  expect(new IMCB().define('jpeg:quality=90').parts('allow-unsafe')).toEqual(['-define', 'jpeg:quality=90'])
-  expect(new IMCB().define('registry:temporary-path=/tmp').parts('allow-unsafe')).toEqual([
+  expect(new IMCB().define('jpeg:quality', 90).parts('allow-unsafe')).toEqual(['-define', 'jpeg:quality=90'])
+  expect(new IMCB().define('registry:temporary-path', '/tmp').parts('allow-unsafe')).toEqual([
     '-define',
     'registry:temporary-path=/tmp',
   ])
   expect(new IMCB().define('ps:imagemask').parts('allow-unsafe')).toEqual(['-define', 'ps:imagemask'])
-  expect(new IMCB().define('*', true).parts('allow-unsafe')).toEqual(['+define', '*'])
+})
+
+test('undefine method', () => {
+  expect(new IMCB().undefine('jpeg:quality').parts('allow-unsafe')).toEqual(['+define', 'jpeg:quality'])
+  expect(new IMCB().undefine('*').parts('allow-unsafe')).toEqual(['+define', '*'])
 })
 
 test('delay method', () => {
   expect(new IMCB().delay(30).parts('allow-unsafe')).toEqual(['-delay', '30'])
-  expect(new IMCB().delay('30x100').parts('allow-unsafe')).toEqual(['-delay', '30x100'])
-  expect(new IMCB().delay('50x200').parts('allow-unsafe')).toEqual(['-delay', '50x200'])
+  expect(new IMCB().delay(30, 100).parts('allow-unsafe')).toEqual(['-delay', '30x100'])
+  expect(new IMCB().delay(50, 200).parts('allow-unsafe')).toEqual(['-delay', '50x200'])
   expect(new IMCB().delay(10, '>').parts('allow-unsafe')).toEqual(['-delay', '10>'])
   expect(new IMCB().delay(5, '<').parts('allow-unsafe')).toEqual(['-delay', '5<'])
+  expect(new IMCB().delay(30, 100, '>').parts('allow-unsafe')).toEqual(['-delay', '30x100>'])
 })
 
 test('direction method', () => {
@@ -711,6 +734,7 @@ test('frame method', () => {
   expect(new IMCB().frame(10, 10).parts('allow-unsafe')).toEqual(['-frame', '10x10'])
   expect(new IMCB().frame(15, 20, 5).parts('allow-unsafe')).toEqual(['-frame', '15x20+5'])
   expect(new IMCB().frame(20, 25, 8, 3).parts('allow-unsafe')).toEqual(['-frame', '20x25+8+3'])
+  expect(new IMCB().frame(5).parts('allow-unsafe')).toEqual(['-frame', '5'])
 })
 
 test('function method', () => {
@@ -757,6 +781,9 @@ test('lat method', () => {
   expect(new IMCB().lat(10, 10).parts('allow-unsafe')).toEqual(['-lat', '10x10'])
   expect(new IMCB().lat(10, 10, 5).parts('allow-unsafe')).toEqual(['-lat', '10x10+5'])
   expect(new IMCB().lat(20, 15, '8%').parts('allow-unsafe')).toEqual(['-lat', '20x15+8%'])
+
+  // negative offset increases sensitivity; must emit -5, not +-5
+  expect(new IMCB().lat(10, 10, -5).parts('allow-unsafe')).toEqual(['-lat', '10x10-5'])
 })
 
 test('layers method', () => {
@@ -835,12 +862,16 @@ test('motionBlur method', () => {
   expect(new IMCB().motionBlur(0, 20, 45).parts('allow-unsafe')).toEqual(['-motion-blur', '0x20+45'])
   expect(new IMCB().motionBlur(5, 10, 90).parts('allow-unsafe')).toEqual(['-motion-blur', '5x10+90'])
   expect(new IMCB().motionBlur(2, 5, 180).parts('allow-unsafe')).toEqual(['-motion-blur', '2x5+180'])
+  expect(new IMCB().motionBlur(0, 5, -45).parts('allow-unsafe')).toEqual(['-motion-blur', '0x5-45'])
 })
 
 test('noise method', () => {
-  expect(new IMCB().noise('Gaussian').parts('allow-unsafe')).toEqual(['-noise', 'Gaussian'])
-  expect(new IMCB().noise('Poisson').parts('allow-unsafe')).toEqual(['-noise', 'Poisson'])
-  expect(new IMCB().noise().parts('allow-unsafe')).toEqual(['+noise'])
+  // +noise type adds noise
+  expect(new IMCB().noise('Gaussian').parts('allow-unsafe')).toEqual(['+noise', 'Gaussian'])
+  expect(new IMCB().noise('Poisson').parts('allow-unsafe')).toEqual(['+noise', 'Poisson'])
+
+  // -noise radius reduces noise
+  expect(new IMCB().noise(3).parts('allow-unsafe')).toEqual(['-noise', '3'])
 })
 
 test('orderedDither method', () => {
@@ -894,7 +925,7 @@ test('print method', () => {
 test('profile method', () => {
   expect(new IMCB().profile('sRGB.icc').parts('allow-unsafe')).toEqual(['-profile', 'sRGB.icc'])
   expect(new IMCB().profile('AdobeRGB.icc').parts('allow-unsafe')).toEqual(['-profile', 'AdobeRGB.icc'])
-  expect(new IMCB().profile().parts('allow-unsafe')).toEqual(['+profile'])
+  expect(new IMCB().profile('!xmp,*', true).parts('allow-unsafe')).toEqual(['+profile', '!xmp,*'])
 })
 
 test('quantize method', () => {
@@ -965,6 +996,10 @@ test('roll method', () => {
   expect(new IMCB().roll(20, 10).parts('allow-unsafe')).toEqual(['-roll', '+20+10'])
   expect(new IMCB().roll(-50, -25).parts('allow-unsafe')).toEqual(['-roll', '-50-25'])
   expect(new IMCB().roll(30, -15).parts('allow-unsafe')).toEqual(['-roll', '+30-15'])
+
+  // zero coordinates must keep their sign so digits do not merge
+  expect(new IMCB().roll(5, 0).parts('allow-unsafe')).toEqual(['-roll', '+5+0'])
+  expect(new IMCB().roll(0, 5).parts('allow-unsafe')).toEqual(['-roll', '+0+5'])
 })
 
 test('sample method', () => {
@@ -1032,27 +1067,32 @@ test('shade method', () => {
 })
 
 test('shadow method', () => {
-  expect(new IMCB().shadow(0, 5, 3, 3).parts('allow-unsafe')).toEqual(['-shadow', '0x5+3+3'])
-  expect(new IMCB().shadow(2, 4, 5, 5).parts('allow-unsafe')).toEqual(['-shadow', '2x4+5+5'])
-  expect(new IMCB().shadow(1, 3, 2, 2).parts('allow-unsafe')).toEqual(['-shadow', '1x3+2+2'])
+  expect(new IMCB().shadow(80, 3, 5, 5).parts('allow-unsafe')).toEqual(['-shadow', '80x3+5+5'])
+  expect(new IMCB().shadow(60, 4).parts('allow-unsafe')).toEqual(['-shadow', '60x4'])
+  expect(new IMCB().shadow(80).parts('allow-unsafe')).toEqual(['-shadow', '80'])
+  expect(new IMCB().shadow(80, 3, -5, -5).parts('allow-unsafe')).toEqual(['-shadow', '80x3-5-5'])
 })
 
 test('shave method', () => {
   expect(new IMCB().shave(10, 10).parts('allow-unsafe')).toEqual(['-shave', '10x10'])
   expect(new IMCB().shave(5, 8).parts('allow-unsafe')).toEqual(['-shave', '5x8'])
-  expect(new IMCB().shave(20, 15).parts('allow-unsafe')).toEqual(['-shave', '20x15'])
+  expect(new IMCB().shave('10%', '10%').parts('allow-unsafe')).toEqual(['-shave', '10%x10%'])
 })
 
 test('shear method', () => {
   expect(new IMCB().shear(30, 0).parts('allow-unsafe')).toEqual(['-shear', '30x0'])
   expect(new IMCB().shear(0, 30).parts('allow-unsafe')).toEqual(['-shear', '0x30'])
   expect(new IMCB().shear(15, 10).parts('allow-unsafe')).toEqual(['-shear', '15x10'])
+
+  // single value: imagemagick applies it to both axes
+  expect(new IMCB().shear(20).parts('allow-unsafe')).toEqual(['-shear', '20'])
 })
 
 test('sigmoidalContrast method', () => {
   expect(new IMCB().sigmoidalContrast(3, 50).parts('allow-unsafe')).toEqual(['-sigmoidal-contrast', '3x50'])
   expect(new IMCB().sigmoidalContrast(3, '50%').parts('allow-unsafe')).toEqual(['-sigmoidal-contrast', '3x50%'])
-  expect(new IMCB().sigmoidalContrast(3, '50%', true).parts('allow-unsafe')).toEqual(['+sigmoidal-contrast', '3x50%'])
+  expect(new IMCB().sigmoidalContrast(3, '50%', true).parts('allow-unsafe')).toEqual(['-sigmoidal-contrast', '3x50%'])
+  expect(new IMCB().sigmoidalContrast(3, '50%', false).parts('allow-unsafe')).toEqual(['+sigmoidal-contrast', '3x50%'])
   expect(new IMCB().sigmoidalContrast(5, 25).parts('allow-unsafe')).toEqual(['-sigmoidal-contrast', '5x25'])
 })
 
@@ -1063,9 +1103,10 @@ test('sketch method', () => {
 })
 
 test('smush method', () => {
-  expect(new IMCB().smush(10).parts('allow-unsafe')).toEqual(['+smush', '10'])
-  expect(new IMCB().smush(-5).parts('allow-unsafe')).toEqual(['+smush', '-5'])
-  expect(new IMCB().smush(15, true).parts('allow-unsafe')).toEqual(['-smush', '15'])
+  // -smush stacks top-to-bottom (like -append); +smush joins left-to-right
+  expect(new IMCB().smush(10).parts('allow-unsafe')).toEqual(['-smush', '10'])
+  expect(new IMCB().smush(-5).parts('allow-unsafe')).toEqual(['-smush', '-5'])
+  expect(new IMCB().smush(15, true).parts('allow-unsafe')).toEqual(['+smush', '15'])
 })
 
 test('solarize method', () => {
@@ -1078,6 +1119,7 @@ test('splice method', () => {
   expect(new IMCB().splice(10, 10, 100, 100).parts('allow-unsafe')).toEqual(['-splice', '10x10+100+100'])
   expect(new IMCB().splice(20, 15, 50, 75).parts('allow-unsafe')).toEqual(['-splice', '20x15+50+75'])
   expect(new IMCB().splice(5, 8, 25, 30).parts('allow-unsafe')).toEqual(['-splice', '5x8+25+30'])
+  expect(new IMCB().splice(g => g.size(0, 10).offset(0, 0)).parts('allow-unsafe')).toEqual(['-splice', '0x10+0+0'])
 })
 
 test('spread method', () => {
@@ -1090,6 +1132,8 @@ test('statistic method', () => {
   expect(new IMCB().statistic('Median', 2, 2).parts('allow-unsafe')).toEqual(['-statistic', 'Median', '2x2'])
   expect(new IMCB().statistic('Mean', 3, 3).parts('allow-unsafe')).toEqual(['-statistic', 'Mean', '3x3'])
   expect(new IMCB().statistic('Maximum', 1, 1).parts('allow-unsafe')).toEqual(['-statistic', 'Maximum', '1x1'])
+  expect(new IMCB().statistic('Contrast', 2, 2).parts('allow-unsafe')).toEqual(['-statistic', 'Contrast', '2x2'])
+  expect(new IMCB().statistic('NonPeak', 2, 2).parts('allow-unsafe')).toEqual(['-statistic', 'NonPeak', '2x2'])
 })
 
 test('stretch method', () => {
@@ -1145,9 +1189,9 @@ test('thumbnail method', () => {
   expect(new IMCB().thumbnail(undefined, 200).parts('allow-unsafe')).toEqual(['-thumbnail', 'x200'])
 })
 
-test('thumbnailExt method', () => {
-  expect(new IMCB().thumbnailExt(g => g.scale(50)).parts('allow-unsafe')).toEqual(['-thumbnail', '50%'])
-  expect(new IMCB().thumbnailExt(g => g.size(100, 100).flag('!')).parts('allow-unsafe')).toEqual([
+test('thumbnail with callback', () => {
+  expect(new IMCB().thumbnail(g => g.scale(50)).parts('allow-unsafe')).toEqual(['-thumbnail', '50%'])
+  expect(new IMCB().thumbnail(g => g.size(100, 100).flag('!')).parts('allow-unsafe')).toEqual([
     '-thumbnail',
     '100x100!',
   ])
@@ -1187,8 +1231,9 @@ test('treedepth method', () => {
 })
 
 test('type method', () => {
-  expect(new IMCB().type('grayscale').parts('allow-unsafe')).toEqual(['-type', 'grayscale'])
-  expect(new IMCB().type('palette').parts('allow-unsafe')).toEqual(['-type', 'palette'])
+  expect(new IMCB().type('Grayscale').parts('allow-unsafe')).toEqual(['-type', 'Grayscale'])
+  expect(new IMCB().type('Palette').parts('allow-unsafe')).toEqual(['-type', 'Palette'])
+  expect(new IMCB().type('TrueColorAlpha').parts('allow-unsafe')).toEqual(['-type', 'TrueColorAlpha'])
 })
 
 test('undercolor method', () => {
@@ -1201,8 +1246,8 @@ test('uniqueColors method', () => {
 })
 
 test('units method', () => {
-  expect(new IMCB().units('pixelsperinch').parts('allow-unsafe')).toEqual(['-units', 'pixelsperinch'])
-  expect(new IMCB().units('pixelspercentimeter').parts('allow-unsafe')).toEqual(['-units', 'pixelspercentimeter'])
+  expect(new IMCB().units('PixelsPerInch').parts('allow-unsafe')).toEqual(['-units', 'PixelsPerInch'])
+  expect(new IMCB().units('PixelsPerCentimeter').parts('allow-unsafe')).toEqual(['-units', 'PixelsPerCentimeter'])
 })
 
 test('unsharp method', () => {
@@ -1223,6 +1268,8 @@ test('version method', () => {
 test('vignette method', () => {
   expect(new IMCB().vignette(0, 150).parts('allow-unsafe')).toEqual(['-vignette', '0x150'])
   expect(new IMCB().vignette(2, 100, 5, 5).parts('allow-unsafe')).toEqual(['-vignette', '2x100+5+5'])
+  expect(new IMCB().vignette(5).parts('allow-unsafe')).toEqual(['-vignette', '5'])
+  expect(new IMCB().vignette(0, 2, '10%', '10%').parts('allow-unsafe')).toEqual(['-vignette', '0x2+10%+10%'])
 })
 
 test('wave method', () => {
@@ -1231,8 +1278,8 @@ test('wave method', () => {
 })
 
 test('weight method', () => {
-  expect(new IMCB().weight('bold').parts('allow-unsafe')).toEqual(['-weight', 'bold'])
-  expect(new IMCB().weight('400').parts('allow-unsafe')).toEqual(['-weight', '400'])
+  expect(new IMCB().weight('Bold').parts('allow-unsafe')).toEqual(['-weight', 'Bold'])
+  expect(new IMCB().weight(400).parts('allow-unsafe')).toEqual(['-weight', '400'])
 })
 
 test('whitePoint method', () => {
@@ -1349,6 +1396,40 @@ test('complex command with buffers', () => {
   expect(im.fds()).toEqual([backgroundBuffer, overlayBuffer])
 })
 
+test('buffers in nested builders get distinct fd numbers', () => {
+  const backgroundBuffer = Buffer.from('background')
+  const overlayBuffer = Buffer.from('overlay')
+
+  const im = new IMCB(backgroundBuffer)
+  im.parens(new IMCB(overlayBuffer).resize(10, 10))
+  im.composite()
+
+  expect(im.parts('allow-unsafe')).toEqual(['fd:3', '(', 'fd:4', '-resize', '10x10', ')', '-composite'])
+  expect(im.fds()).toEqual([backgroundBuffer, overlayBuffer])
+})
+
+test('buffer added to a nested builder after embedding is still counted', () => {
+  const buffer = Buffer.from('late')
+  const nested = new IMCB()
+
+  const im = new IMCB('base.png')
+  im.parens(nested)
+  nested.resource(buffer)
+
+  expect(im.parts('allow-unsafe')).toEqual(['base.png', '(', 'fd:3', ')'])
+  expect(im.fds()).toEqual([buffer])
+})
+
+test('same buffer used twice gets one fd per occurrence', () => {
+  const buffer = Buffer.from('reused')
+
+  const im = new IMCB(buffer)
+  im.parens(new IMCB(buffer))
+
+  expect(im.parts('allow-unsafe')).toEqual(['fd:3', '(', 'fd:4', ')'])
+  expect(im.fds()).toEqual([buffer, buffer])
+})
+
 test('contrastStretch', () => {
   expect(new IMCB().contrastStretch(2, 5).parts('allow-unsafe')).toEqual(['-contrast-stretch', '2x5'])
   expect(new IMCB().contrastStretch(1000).parts('allow-unsafe')).toEqual(['-contrast-stretch', '1000'])
@@ -1364,16 +1445,17 @@ test('label (resource creator, unchanged behavior)', () => {
 })
 
 test('wordBreak', () => {
-  expect(new IMCB().wordBreak('break-all').parts('allow-unsafe')).toEqual(['-word-break', 'break-all'])
+  expect(new IMCB().wordBreak('Normal').parts('allow-unsafe')).toEqual(['-word-break', 'Normal'])
+  expect(new IMCB().wordBreak('BreakWord').parts('allow-unsafe')).toEqual(['-word-break', 'BreakWord'])
 })
 
 test('canny', () => {
   expect(new IMCB().canny(0, 1).parts('allow-unsafe')).toEqual(['-canny', '0x1'])
 })
 
-test('cannyExt with percentage thresholds', () => {
-  expect(new IMCB().cannyExt(0, 1, '10%', '30%').parts('allow-unsafe')).toEqual(['-canny', '0x1+10%+30%'])
-  expect(new IMCB().cannyExt(0, 1, 10, 30).parts('allow-unsafe')).toEqual(['-canny', '0x1+10+30'])
+test('canny with thresholds', () => {
+  expect(new IMCB().canny(0, 1, '10%', '30%').parts('allow-unsafe')).toEqual(['-canny', '0x1+10%+30%'])
+  expect(new IMCB().canny(0, 1, 10, 30).parts('allow-unsafe')).toEqual(['-canny', '0x1+10+30'])
 })
 
 test('clahe with percentage dimensions', () => {
@@ -1381,35 +1463,70 @@ test('clahe with percentage dimensions', () => {
   expect(new IMCB().clahe('25%', '25%').parts('allow-unsafe')).toEqual(['-clahe', '25%x25%'])
 })
 
-test('claheExt', () => {
-  expect(new IMCB().claheExt(50, 50, 128, 3).parts('allow-unsafe')).toEqual(['-clahe', '50x50+128+3'])
-  expect(new IMCB().claheExt('25%', '25%', 128, 3).parts('allow-unsafe')).toEqual(['-clahe', '25%x25%+128+3'])
+test('clahe with tiles and limit', () => {
+  expect(new IMCB().clahe(50, 50, 128, 3).parts('allow-unsafe')).toEqual(['-clahe', '50x50+128+3'])
+  expect(new IMCB().clahe('25%', '25%', 128, 3).parts('allow-unsafe')).toEqual(['-clahe', '25%x25%+128+3'])
 })
 
-test('extractExt', () => {
-  expect(new IMCB().extractExt(g => g.size(100, 100).offset(50, 25)).parts('allow-unsafe')).toEqual(['-extract', '100x100+50+25'])
+test('clahe with callback for exact tile flag', () => {
+  expect(new IMCB().clahe(g => g.scale(50, 50).offset(128, 3).flag('!')).parts('allow-unsafe')).toEqual([
+    '-clahe',
+    '50%x50%!+128+3',
+  ])
 })
 
-test('interpolativeResizeExt', () => {
-  expect(new IMCB().interpolativeResizeExt(g => g.size(200, 100)).parts('allow-unsafe')).toEqual(['-interpolative-resize', '200x100'])
+test('meanShift with percent distance', () => {
+  expect(new IMCB().meanShift(7, 7, '10%').parts('allow-unsafe')).toEqual(['-mean-shift', '7x7+10%'])
+  expect(new IMCB().meanShift(7, 7, 10).parts('allow-unsafe')).toEqual(['-mean-shift', '7x7+10'])
 })
 
-test('liquidRescaleExt', () => {
-  expect(new IMCB().liquidRescaleExt(g => g.size(150, 200).offset(3, 1)).parts('allow-unsafe')).toEqual(['-liquid-rescale', '150x200+3+1'])
+test('extract with callback', () => {
+  expect(new IMCB().extract(g => g.size(100, 100).offset(50, 25)).parts('allow-unsafe')).toEqual(['-extract', '100x100+50+25'])
 })
 
-test('pageExt', () => {
-  expect(new IMCB().pageExt(g => g.size(612, 792).offset(0, 0)).parts('allow-unsafe')).toEqual(['-page', '612x792+0+0'])
+test('interpolativeResize with callback', () => {
+  expect(new IMCB().interpolativeResize(g => g.size(200, 100)).parts('allow-unsafe')).toEqual(['-interpolative-resize', '200x100'])
 })
 
-test('repageExt', () => {
-  expect(new IMCB().repageExt(g => g.size(100, 100).offset(0, 0)).parts('allow-unsafe')).toEqual(['-repage', '100x100+0+0'])
+test('liquidRescale with callback', () => {
+  expect(new IMCB().liquidRescale(g => g.size(150, 200).offset(3, 1)).parts('allow-unsafe')).toEqual(['-liquid-rescale', '150x200+3+1'])
 })
 
-test('sampleExt', () => {
-  expect(new IMCB().sampleExt(g => g.size(200, 100)).parts('allow-unsafe')).toEqual(['-sample', '200x100'])
+test('page with callback', () => {
+  expect(new IMCB().page(g => g.size(612, 792).offset(0, 0)).parts('allow-unsafe')).toEqual(['-page', '612x792+0+0'])
 })
 
-test('scaleExt', () => {
-  expect(new IMCB().scaleExt(g => g.scale(50)).parts('allow-unsafe')).toEqual(['-scale', '50%'])
+test('repage with callback', () => {
+  expect(new IMCB().repage(g => g.size(100, 100).offset(0, 0)).parts('allow-unsafe')).toEqual(['-repage', '100x100+0+0'])
+})
+
+test('sample with callback', () => {
+  expect(new IMCB().sample(g => g.size(200, 100)).parts('allow-unsafe')).toEqual(['-sample', '200x100'])
+})
+
+test('scale with callback', () => {
+  expect(new IMCB().scale(g => g.scale(50)).parts('allow-unsafe')).toEqual(['-scale', '50%'])
+})
+
+test('copy method', () => {
+  expect(new IMCB().copy(10, 10, 0, 0, 50, 50).parts('allow-unsafe')).toEqual(['-copy', '10x10+0+0', '+50+50'])
+  expect(
+    new IMCB().copy(g => g.size(10, 10).offset(0, 0), g => g.offset(50, 50)).parts('allow-unsafe')
+  ).toEqual(['-copy', '10x10+0+0', '+50+50'])
+})
+
+test('rangeThreshold method', () => {
+  expect(new IMCB().rangeThreshold('10%', '20%', '80%', '90%').parts('allow-unsafe')).toEqual([
+    '-range-threshold',
+    '10%,20%,80%,90%',
+  ])
+  expect(new IMCB().rangeThreshold(50, 100, 200, 250).parts('allow-unsafe')).toEqual([
+    '-range-threshold',
+    '50,100,200,250',
+  ])
+})
+
+test('connectedComponents method', () => {
+  expect(new IMCB().connectedComponents(4).parts('allow-unsafe')).toEqual(['-connected-components', '4'])
+  expect(new IMCB().connectedComponents(8).parts('allow-unsafe')).toEqual(['-connected-components', '8'])
 })
