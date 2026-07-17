@@ -11,9 +11,8 @@ build ImageMagick v7 commands programmatically. tested against `v7.1.2-27`.
 ```ts
 import { wand, run } from 'im-cbt'
 
-const im = wand()
-im.resource('logo:')
-  .resize(100, 200)
+const im = wand('logo:')
+im.resize(100, 200)
   .gravity('Center')
   .resource('rose:')
   .geometry(-2, -10)
@@ -26,7 +25,7 @@ const image: Buffer = await run(im, 'png')
 
 ```ts
 const photo: Buffer = await readFile('photo.jpg')
-const im = wand(photo).resize(100, 100)
+const im = wand().resource(photo).resize(100, 100)
 
 const thumbnail: Buffer = await run(im, 'jpg')
 ```
