@@ -1,26 +1,53 @@
-name: build + test
+name: ci
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [main]
   pull_request:
-    branches: [ "main" ]
 
 jobs:
-  build:
+  test:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        node-version: [16.x, 18.x, 19.x, 20.x]
     steps:
-    - uses: actions/checkout@v3
-    - uses: pnpm/action-setup@v2
-      with:
-        version: 8
-    - name: use node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v3
-      with:
-        node-version: ${{ matrix.node-version }}
-        cache: 'pnpm'
-    - run: pnpm install --frozen-lockfile
-    - run: pnpm jest
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - name: install imagemagick 7 (portable build)
+        run: |
+          curl -fsSL https://imagemagick.org/archive/binaries/magick -o /tmp/magick
+          chmod +x /tmp/magick
+          cd /tmp && ./magick --appimage-extract > /dev/null
+          echo "/tmp/squashfs-root/usr/bin" >> "$GITHUB_PATH"
+      - name: install a font for the text-rendering tests
+        run: sudo apt-get update && sudo apt-get install -y fonts-dejavu-core
+      - run: bun install --frozen-lockfile
+      - run: magick --version
+      - run: bunx tsc --noEmit
+      - run: bun test
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: biomejs/setup-biome@v2
+      - run: biome ci .
+
+  node-require:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: bun install --frozen-lockfile
+      - run: bun run build
+      - name: require() the built package from commonjs
+        run: |
+          node --input-type=commonjs -e "
+            const { wand } = require('./')
+            const parts = wand('rose:').resize(10, 10).parts()
+            if (parts.join(' ') !== 'rose: -resize 10x10') {
+              throw new Error('unexpected argv: ' + parts.join(' '))
+            }
+            console.log('CJS require OK:', parts.join(' '))
+          "
