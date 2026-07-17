@@ -1,19 +1,17 @@
 # ImageMagick Command Builder Tool
 
-Build ImageMagick commands progmatically. Execute yourself.
+build ImageMagick v7 commands programmatically. tested against `v7.1.2-27`.
 
-## Install
 ```sh
 <package manager> add im-cbt
 ```
 
-## Examples
+## examples
 
 ```ts
-import IM from 'im-cbt'
-import { spawn } from 'child_process' // prevent malicious input; use spawn (NOT `execute`/`executeSync`!!!)
+import { wand, run } from 'im-cbt'
 
-const im = IM()
+const im = wand()
 im.resource('logo:')
   .resize(100, 200)
   .gravity('Center')
@@ -21,30 +19,81 @@ im.resource('logo:')
   .geometry(-2, -10)
   .composite()
   .fill('green')
-  .command('-colorize', 30) // run special commands
+  .colorize(30)
 
-// run imagemagick yourself ('magick' / 'convert' / etc.)
-spawn('magick', [...im.parts(), 'output.png'])
+const image: Buffer = await run(im, 'png')
 ```
 
 ```ts
-const im = IM('rose:')
+const photo: Buffer = await readFile('photo.jpg')
+const im = wand(photo).resize(100, 100)
 
-const smallLogo = IM('logo:')
-  .resizeExt(g => g.size(200, 300).flag('^'))
+const thumbnail: Buffer = await run(im, 'jpg')
+```
+
+my personal convention is to create the wand and call it `im`, but you can choose whatever you want.
+
+every non-deprecated option has a method. if something is missing, you can run special commands with eg. `im.command('-some-option', 50)`.
+
+`run(...)` needs ImageMagick installed. it runs `magick` from your PATH (override with `run(im, 'png', { binary: 'my-magick-binary' })`). rejects with an `ImageMagickError` if something goes wrong.
+
+geometry flags have descriptive aliases: `.flag('fill-area')` is the same as `.flag('^')`. the others are `exact` (`!`), `enlarge-only` (`<`), `shrink-only` (`>`), and `pad` (`#`).
+
+```ts
+const im = wand('wizard:')
+
+const smallLogo = wand('logo:')
+  .resize(g => g.size(200, 300).flag('^'))
 
 im.parens(smallLogo)
   .gravity('SouthEast')
   .composite()
+
+const image = await run(im, 'png')
 ```
 
-The most common options are supported. If you need something missing, you can do `im.command('-colorize', 50)`
+## advanced: spawning yourself
 
-### Special case: Whack Edition™
-This snippet of code is for you when needing to…
-- generate an image async with Node.js
-- provide additional images as `Buffer`s
-- return output as `Buffer`
+`run(...)` covers the normal case. to run manually you have to do the following:
 
-Providing `Buffer`s for images is now directly supported by the command builder. Simply pass buffers to the `resource()` method and they will be automatically converted to file descriptor references.
+- `im.parts()` returns all arguments.
+- `im.fds()` returns all `Buffer`s, when you've passed in images in-memory.
 
+the arguments work with any imagemagick tool. a wand holding only options doubles as a mogrify option set:
+
+```ts
+import { spawn } from 'node:child_process' // do not use `execute`, risk for injection attacks
+
+const im = wand().resize(200, 200).strip().quality(80)
+
+// magick expands the glob itself; no shell is involved
+spawn('magick', ['mogrify', ...im.parts(), 'photos/*.jpg'])
+```
+
+if you passed in images in-memory, they are stored as `Buffer` resources. map each buffer into `fd:(3+N)` argument. example comparing two images in-memory:
+
+```ts
+import { spawn } from 'node:child_process'
+import type { Writable } from 'node:stream'
+
+const before: Buffer = // some binary data ...
+const after: Buffer = // ... and an edited version of it
+
+const im = wand().metric('AE').resource(before).resource(after)
+
+const buffers = im.fds()
+// note: `magick compare` exits with 0 for identical images and 1 for differing ones
+const child = spawn('magick', ['compare', ...im.parts(), 'diff.png'], {
+  stdio: ['ignore', 'inherit', 'inherit', ...buffers.map(() => 'pipe' as const)],
+})
+
+for (const [index, buffer] of buffers.entries()) {
+  const stream = child.stdio[3 + index] as Writable
+  stream.on('error', () => {}) // magick may exit before reading every input
+  stream.end(buffer)
+}
+
+child.on('close', code => {
+  console.log(`compare exited with ${code}`)
+})
+```
