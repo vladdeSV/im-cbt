@@ -36,8 +36,8 @@ export class ImageMagickError extends Error {
  */
 export function run(wand: CommandBuilder, format: string, options: RunOptions = {}): Promise<Buffer> {
   const binary = options.binary ?? 'magick'
-  const argv = [...wand.parts(), `${format}:-`]
-  const buffers = wand.fds()
+  const argv = [...wand.args(), `${format}:-`]
+  const buffers = wand.buffers()
 
   // slots 0-2 are stdin/stdout/stderr, then one pipe per buffer resource,
   // matching the fd:3, fd:4, ... references emitted by parts()

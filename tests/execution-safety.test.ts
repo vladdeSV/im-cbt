@@ -59,7 +59,7 @@ const renderDrawn = (name: string, text: string): string => {
     .draw(d => d.text(10, 50, text))
     .command('-trim', '+repage')
 
-  const result = spawnSync(['magick', ...im.parts(), out])
+  const result = spawnSync(['magick', ...im.args(), out])
   expect(result.exitCode).toBe(0)
 
   return out
@@ -127,7 +127,7 @@ test('hostile and degenerate inputs render without failing', () => {
       .draw(d => d.text(10, 50, text))
       .command('info:')
 
-    const result = spawnSync(['magick', ...im.parts()])
+    const result = spawnSync(['magick', ...im.args()])
     expect(result.exitCode).toBe(0)
   }
 

@@ -47,7 +47,7 @@ jobs:
         run: |
           node --input-type=commonjs -e "
             const { wand } = require('./')
-            const parts = wand('rose:').resize(10, 10).parts()
+            const parts = wand('rose:').resize(10, 10).args()
             if (parts.join(' ') !== 'rose: -resize 10x10') {
               throw new Error('unexpected argv: ' + parts.join(' '))
             }

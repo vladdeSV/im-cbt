@@ -56,8 +56,8 @@ const image = await run(im, 'png')
 
 `run(...)` covers the normal case. to run manually you have to do the following:
 
-- `im.parts()` returns all arguments.
-- `im.fds()` returns all `Buffer`s, when you've passed in images in-memory.
+- `im.args()` returns all arguments for use with `spawn(...)`
+- `im.buffers()` returns all `Buffer`s, when you've passed in images in-memory.
 
 the arguments work with any imagemagick tool. a wand holding only options doubles as a mogrify option set:
 
@@ -67,7 +67,7 @@ import { spawn } from 'node:child_process' // do not use `execute`, risk for inj
 const im = wand().resize(200, 200).strip().quality(80)
 
 // magick expands the glob itself; no shell is involved
-spawn('magick', ['mogrify', ...im.parts(), 'photos/*.jpg'])
+spawn('magick', ['mogrify', ...im.args(), 'photos/*.jpg'])
 ```
 
 if you passed in images in-memory, they are stored as `Buffer` resources. map each buffer into `fd:(3+N)` argument. example comparing two images in-memory:
@@ -81,9 +81,9 @@ const after: Buffer = // ... and an edited version of it
 
 const im = wand().metric('AE').resource(before).resource(after)
 
-const buffers = im.fds()
+const buffers = im.buffers()
 // note: `magick compare` exits with 0 for identical images and 1 for differing ones
-const child = spawn('magick', ['compare', ...im.parts(), 'diff.png'], {
+const child = spawn('magick', ['compare', ...im.args(), 'diff.png'], {
   stdio: ['ignore', 'inherit', 'inherit', ...buffers.map(() => 'pipe' as const)],
 })
 

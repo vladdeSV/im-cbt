@@ -54,10 +54,9 @@ class CommandBuilder {
   }
 
   /**
-   * the raw argv for `spawn(binary, argv)`. safe there because the OS never
-   * runs a shell; never join these parts into a shell command string
+   * used with `spawn('magick', ...im.args())`
    */
-  parts(): string[] {
+  args(): string[] {
     const a: string[] = []
     let fd = FIRST_BUFFER_FD
     for (const part of this.#flattenedCommands()) {
@@ -75,10 +74,9 @@ class CommandBuilder {
   }
 
   /**
-   * buffers in traversal order. index `i` is read from `fd:${3 + i}` by the
-   * spawned process, so wire each buffer into stdio slot `3 + i`
+   * used when piping buffers into `spawn(...)`
    */
-  fds(): Buffer[] {
+  buffers(): Buffer[] {
     const buffers: Buffer[] = []
     for (const part of this.#flattenedCommands()) {
       if (Buffer.isBuffer(part)) {
