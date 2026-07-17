@@ -11,12 +11,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
-      - name: install imagemagick 7 (portable build)
+      - name: install imagemagick 7.1.2-27
         run: |
-          curl -fsSL https://imagemagick.org/archive/binaries/magick -o /tmp/magick
-          chmod +x /tmp/magick
-          cd /tmp && ./magick --appimage-extract > /dev/null
-          echo "/tmp/squashfs-root/usr/bin" >> "$GITHUB_PATH"
+          curl -fsSL -o /tmp/magick.AppImage https://github.com/ImageMagick/ImageMagick/releases/download/7.1.2-27/ImageMagick-7.1.2-27-gcc-x86_64.AppImage
+          chmod +x /tmp/magick.AppImage
+          cd /tmp && ./magick.AppImage --appimage-extract > /dev/null
+          mkdir -p "$HOME/.local/bin"
+          ln -s /tmp/squashfs-root/AppRun "$HOME/.local/bin/magick"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
       - name: install a font for the text-rendering tests
         run: sudo apt-get update && sudo apt-get install -y fonts-dejavu-core
       - run: bun install --frozen-lockfile
