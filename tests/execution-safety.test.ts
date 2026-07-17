@@ -1,204 +1,136 @@
+import { afterAll, expect, test } from 'bun:test'
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { spawnSync } from 'bun'
-import { expect, test } from 'bun:test'
-import { execSync } from 'node:child_process'
-import { readdirSync, rmSync } from 'node:fs'
-import IM from '../source/index.ts'
+import { wand } from '../source/index.ts'
 
-// clean up any existing injection test files
-try {
-  rmSync('tests/injections', { recursive: true, force: true })
-} catch {}
+// these tests spawn the real magick binary and render text, so they need a
+// system font (DejaVu-Sans); failures here on font-less hosts are unrelated
+// to library correctness
 
-import { mkdirSync } from 'node:fs'
-
-// create injections directory for testing
-mkdirSync('tests/injections', { recursive: true })
-
-// test that spawn and exec produce identical results
-test('spawn vs exec consistency', () => {
-  const testCases = [
-    'hello world',
-    "text with 'single quotes'",
-    'text with "double quotes"',
-    'text with spaces and symbols: !@#$&*()',
-    'path\\with\\backslashes',
-    'mixed \'quotes\\" and \\ backslashes',
-    'newline\ntext',
-    'tab\ttext',
-    // todo: drawing text with `%^` gives warning
-  ]
-
-  testCases.forEach((text, index) => {
-    const im = IM()
-      .size(200, 100)
-      .xc('white')
-      .font('DejaVu-Sans')
-      .pointsize(12)
-      .fill('black')
-      .draw(draw => draw.text(10, 20, text))
-
-    const spawnOut = `tests/injections/test-spawn-${index}.png`
-    const execOut = `tests/injections/test-exec-${index}.png`
-
-    const spawnCmd = ['magick', ...im.parts('allow-unsafe'), spawnOut]
-    const spawnResult = spawnSync(spawnCmd)
-    expect(spawnResult.exitCode).toBe(0)
-
-    const execCmd = ['magick', ...im.parts('escape-shell'), execOut].join(' ')
-    expect(() => execSync(execCmd)).not.toThrow()
-
-    const compareResult = spawnSync(['magick', 'compare', '-metric', 'AE', spawnOut, execOut, 'null:'])
-    const diffPixelCount = parseInt((compareResult.stderr ?? Buffer.from('')).toString().trim(), 10)
-    expect(diffPixelCount).toBe(0)
-
-    // clean up
-    rmSync(spawnOut, { force: true })
-    rmSync(execOut, { force: true })
-  })
+const dir = mkdtempSync(join(tmpdir(), 'im-cbt-draw-'))
+afterAll(() => {
+  rmSync(dir, { recursive: true, force: true })
 })
 
-// test command injection prevention
-test('command injection prevention', () => {
-  const injectionAttempts = [
-    '"; touch tests/injections/inject-1; echo "',
-    "'; touch tests/injections/inject-2; echo '",
-    '`touch tests/injections/inject-3`',
-    '$(touch tests/injections/inject-4)',
-    '; touch tests/injections/inject-5',
-    '&& touch tests/injections/inject-6',
-    '| touch tests/injections/inject-7',
-    '|| touch tests/injections/inject-8',
-    '\n touch tests/injections/inject-9',
-    '\r touch tests/injections/inject-10',
-    '\\"; touch tests/injections/inject-11; echo "',
-    "\\'; touch tests/injections/inject-12; echo '",
-  ]
+const FONT = 'DejaVu-Sans'
+const POINTSIZE = 24
 
-  injectionAttempts.forEach(maliciousInput => {
-    const im = IM()
-      .size(100, 100)
-      .xc('white')
-      .font('DejaVu-Sans')
-      .draw(draw => draw.text(10, 10, maliciousInput))
-      .command('info:')
+/**
+ * renders `text` via `label:@file`: the file bytes reach the renderer with no
+ * escape processing of any kind, so this is the ground truth for what the
+ * drawn text must look like
+ */
+const renderReference = (name: string, text: string): string => {
+  const textFile = join(dir, `${name}.txt`)
+  const out = join(dir, `ref-${name}.png`)
+  writeFileSync(textFile, text)
 
-    const cmd = ['magick', ...im.parts('escape-shell')].join(' ')
+  const result = spawnSync([
+    'magick',
+    '-background',
+    'white',
+    '-fill',
+    'black',
+    '-font',
+    FONT,
+    '-pointsize',
+    String(POINTSIZE),
+    `label:@${textFile}`,
+    '-trim',
+    '+repage',
+    out,
+  ])
+  expect(result.exitCode).toBe(0)
 
-    // must not throw (not malformed)
-    expect(() => execSync(cmd)).not.toThrow()
+  return out
+}
+
+/** renders `text` through the builder's draw().text() and trims to the glyphs */
+const renderDrawn = (name: string, text: string): string => {
+  const out = join(dir, `drawn-${name}.png`)
+  const im = wand()
+    .size(600, 80)
+    .xc('white')
+    .font(FONT)
+    .pointsize(POINTSIZE)
+    .fill('black')
+    .draw(d => d.text(10, 50, text))
+    .command('-trim', '+repage')
+
+  const result = spawnSync(['magick', ...im.parts(), out])
+  expect(result.exitCode).toBe(0)
+
+  return out
+}
+
+const pixelDiff = (a: string, b: string): number => {
+  const result = spawnSync(['magick', 'compare', '-metric', 'AE', a, b, 'null:'])
+  return Number.parseFloat(result.stderr.toString().trim().split(' ')[0] ?? 'NaN')
+}
+
+// every entry must render, through draw escaping, to exactly the glyphs the
+// raw string contains
+const roundTrips: Record<string, string> = {
+  plain: 'hello world',
+  'single quote': "it's here",
+  'double quote': 'say "hi"',
+  'both quotes': 'a\'"b',
+  backslash: 'a\\b',
+  'windows path': 'C:\\dir\\file',
+  'backslash then quote': 'a\\"b',
+  'quote then backslash': 'a"\\b',
+  'trailing backslash': 'ab\\',
+  'double backslash': 'a\\\\b',
+  symbols: '!@#$&*()=[]{},.<>?',
+}
+
+for (const [name, text] of Object.entries(roundTrips)) {
+  test(`drawn text matches raw glyphs: ${name}`, () => {
+    const slug = name.replace(/[^a-z]+/g, '-')
+    const reference = renderReference(slug, text)
+    const drawn = renderDrawn(slug, text)
+
+    expect(pixelDiff(reference, drawn)).toBe(0)
   })
+}
 
-  // ensure no injection files were created
-  const injectionFiles = readdirSync('tests/injections').filter(f => f.startsWith('inject-'))
-  expect(injectionFiles).toHaveLength(0)
-})
-
-// test weird strings
-test('formatting never causes failures', () => {
-  const problematicInputs = [
-    '',
+// hostile and degenerate inputs must never make the spawned command fail;
+// with an argv array there is no shell, so metacharacters are plain text
+test('hostile and degenerate inputs render without failing', () => {
+  const inputs = [
+    '"; touch injected-file; echo "',
+    "'; touch injected-file; echo '",
+    '`touch injected-file`',
+    '$(touch injected-file)',
+    '&& touch injected-file ||',
+    '| touch injected-file',
     ' ',
     '  multiple   spaces  ',
-    '\t\n\r',
+    'newline\ntext',
+    'tab\ttext',
     '🚀🎉✨',
     'very long text '.repeat(100),
     '\\\\\\\\',
     '""""""""',
     "''''''''",
-    `\x5C"\x5C\x5C"\x5C'\x5C\x5C'\x5C\x5C\x5C'\x5C\x5C\x5C\x5C'\x5C\x5C\x5C\x5C"\x5C\x5C\x5C\x5C"`,
-    '()[]{}',
-    '!@#$%^&*()_+-=[]{}|;:,.<>?',
   ]
 
-  problematicInputs.forEach(input => {
-    const im = IM()
-      .size(200, 100)
+  for (const text of inputs) {
+    const im = wand()
+      .size(400, 100)
       .xc('white')
-      .font('DejaVu-Sans')
-      .draw(draw => draw.text(10, 20, input))
+      .font(FONT)
+      .pointsize(POINTSIZE)
+      .fill('black')
+      .draw(d => d.text(10, 50, text))
       .command('info:')
 
-    expect(() => {
-      const spawnCmd = ['magick', ...im.parts('allow-unsafe')]
-      spawnSync(spawnCmd)
-    }).not.toThrow()
+    const result = spawnSync(['magick', ...im.parts()])
+    expect(result.exitCode).toBe(0)
+  }
 
-    expect(() => {
-      const execCmd = ['magick', ...im.parts('escape-shell')].join(' ')
-      execSync(execCmd)
-    }).not.toThrow()
-  })
-})
-
-// test draw parameter escaping
-test('draw parameter escaping', () => {
-  const drawInputs = [
-    'simple text',
-    'text with "quotes"',
-    "text with 'quotes'",
-    'text with \\ backslash',
-    'text with \\\\ double backslash',
-    'text with \\n newline escape',
-    'complex: "hello \'world\'" test',
-  ]
-
-  drawInputs.forEach(text => {
-    const im = IM()
-      .size(200, 100)
-      .xc('white')
-      .font('DejaVu-Sans')
-      .draw(draw => draw.text(10, 20, text))
-      .command('info:')
-
-    // test that draw content is properly escaped
-    const parts = im.parts('escape-shell')
-    const drawParam = parts[parts.indexOf('-draw') + 1]
-    expect(drawParam).toBeDefined()
-
-    // should be wrapped in single quotes for shell safety
-    expect(drawParam?.startsWith("'")).toBe(true)
-    expect(drawParam?.endsWith("'")).toBe(true)
-
-    // should execute successfully
-    const cmd = ['magick', ...parts].join(' ')
-    expect(() => execSync(cmd)).not.toThrow()
-  })
-})
-
-// test file path escaping
-test('file path escaping', () => {
-  const problematicPaths = [
-    'file with spaces.png',
-    'file"with"quotes.png',
-    'file\\with\\backslashes.png',
-    'file-with-many-hyphens.png',
-    'file.with.dots.png',
-  ]
-
-  problematicPaths.forEach(filename => {
-    const im = IM().size(100, 100).xc('red').resource(filename)
-
-    // should handle problematic filenames safely
-    expect(() => {
-      const parts = im.parts('escape-shell')
-      // just verify that we get parts without throwing
-      expect(Array.isArray(parts)).toBe(true)
-      expect(parts.length).toBeGreaterThan(0)
-    }).not.toThrow()
-  })
-
-  // test single quotes specifically (they get special escaping)
-  const im = IM().size(100, 100).xc('red').resource("file'with'quotes.png")
-
-  const parts = im.parts('escape-shell')
-  // single quotes should be escaped as '\''
-  expect(parts).toContain("'file'\\''with'\\''quotes.png'")
-})
-
-// clean up at the end
-test('cleanup', () => {
-  try {
-    rmSync('tests/injections', { recursive: true, force: true })
-  } catch {}
-  expect(true).toBe(true)
+  // and nothing escaped the argv into the filesystem
+  expect(spawnSync(['ls', 'injected-file']).exitCode).not.toBe(0)
 })

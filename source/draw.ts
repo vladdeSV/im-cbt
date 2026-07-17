@@ -1,4 +1,4 @@
-import type { GravityType } from './predefines.ts'
+import type { DrawMethodType, GravityType } from './predefines.ts'
 
 export class Draw {
   #primitives: string[] = []
@@ -115,12 +115,18 @@ export class Draw {
     return this
   }
 
-  color(x0: number, y0: number, method: string): this {
+  color(x0: number, y0: number, method: DrawMethodType): this {
     this.#primitives.push(`color ${this.e(x0)},${this.e(y0)} ${this.e(method)}`)
     return this
   }
 
-  matte(x0: number, y0: number, method: string): this {
+  alpha(x0: number, y0: number, method: DrawMethodType): this {
+    this.#primitives.push(`alpha ${this.e(x0)},${this.e(y0)} ${this.e(method)}`)
+    return this
+  }
+
+  /** @deprecated imagemagick 7 rejects the `matte` primitive; use `.alpha(...)` instead */
+  matte(x0: number, y0: number, method: DrawMethodType): this {
     this.#primitives.push(`matte ${this.e(x0)},${this.e(y0)} ${this.e(method)}`)
     return this
   }

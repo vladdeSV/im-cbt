@@ -1,3 +1,4 @@
+export type { GeometryFlag }
 export { Geometry }
 
 class Geometry {
@@ -15,14 +16,23 @@ class Geometry {
     return this
   }
 
-  flag(flag: '^' | '!' | '<' | '>' | '#'): this {
-    const availableFlags = ['^', '!', '<', '>', '#']
-
-    if (!availableFlags.includes(flag)) {
+  /**
+   * geometry flag appended to the size.
+   *
+   * - `'^'` / `'fill-area'`: cover the given size; one dimension may overflow
+   * - `'!'` / `'exact'`: force the exact size, ignoring aspect ratio
+   * - `'<'` / `'enlarge-only'`: only act on images smaller than the given size
+   * - `'>'` / `'shrink-only'`: only act on images larger than the given size
+   * - `'#'` / `'pad'`: add rows or columns to reach the given size or ratio
+   */
+  flag(flag: GeometryFlag): this {
+    const char = GEOMETRY_FLAGS[flag]
+    if (char === undefined) {
+      // javascript callers are not stopped by the GeometryFlag union
       throw new Error(`Invalid flag '${flag}'`)
     }
 
-    this.#flag = flag
+    this.#flag = char
 
     return this
   }
@@ -85,17 +95,12 @@ class Geometry {
 
     switch (this.#data?.type) {
       case 'size': {
+        // size() clears #data when both are undefined, so at least one is set
         const { width, height } = this.#data
-        const w = width === undefined ? '' : Number(width)
-        const h = height === undefined ? '' : Number(height)
-
-        if (width === undefined && height === undefined) {
-          console.warn('geometry size with both width and height undefined')
-          parts.push('')
-        } else if (width !== undefined && height === undefined) {
-          parts.push(`${w}`)
+        if (height === undefined) {
+          parts.push(`${width}`)
         } else {
-          parts.push(`${w}x${h}`)
+          parts.push(`${width ?? ''}x${height}`)
         }
         break
       }
@@ -124,14 +129,7 @@ class Geometry {
     }
 
     if (this.#flag) {
-      const flag = this.#flag
-      const availableFlags = ['^', '!', '<', '>', '#']
-
-      if (!availableFlags.includes(flag)) {
-        throw new Error(`Invalid flag '${flag}'`)
-      }
-
-      parts.push(flag)
+      parts.push(this.#flag)
     }
 
     if (this.#offset) {
@@ -146,8 +144,25 @@ class Geometry {
 
   #data: GeometryData | undefined = undefined
   #offset: { x: number; y: number } | undefined = undefined
-  #flag: '^' | '!' | '<' | '>' | '#' | undefined = undefined
+  #flag: GeometryFlagChar | undefined = undefined
 }
+
+/** maps every accepted flag spelling (raw character or descriptive alias) to the character imagemagick expects */
+const GEOMETRY_FLAGS = {
+  '^': '^',
+  '!': '!',
+  '<': '<',
+  '>': '>',
+  '#': '#',
+  'fill-area': '^',
+  exact: '!',
+  'enlarge-only': '<',
+  'shrink-only': '>',
+  pad: '#',
+} as const
+
+type GeometryFlag = keyof typeof GEOMETRY_FLAGS
+type GeometryFlagChar = (typeof GEOMETRY_FLAGS)[GeometryFlag]
 
 type GeometryData = GeometrySizeData | GeometryScaleData | GeometryRatioData | GeometryAreaData
 type GeometrySizeData = {

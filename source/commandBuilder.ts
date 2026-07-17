@@ -29,6 +29,7 @@ import type {
   LayersType,
   LimitType,
   ListType,
+  MetricType,
   MorphologyType,
   NoiseType,
   NumberOrPercent,
@@ -43,35 +44,30 @@ import type {
   WordBreakType,
 } from './predefines.ts'
 
-export { ImageMagickCommandBuilder }
+export { CommandBuilder }
 
-class ImageMagickCommandBuilder {
+class CommandBuilder {
   constructor(resource?: string | Buffer) {
     if (resource) {
       this.resource(resource)
     }
   }
 
-  parts(mode: 'escape-shell' | 'allow-unsafe'): string[] {
+  /**
+   * the raw argv for `spawn(binary, argv)`. safe there because the OS never
+   * runs a shell; never join these parts into a shell command string
+   */
+  parts(): string[] {
     const a: string[] = []
     let fd = FIRST_BUFFER_FD
     for (const part of this.#flattenedCommands()) {
       if (Buffer.isBuffer(part)) {
         a.push(`fd:${fd}`)
         fd += 1
-      } else if (part instanceof Geometry) {
+      } else if (part instanceof Geometry || part instanceof Draw) {
         a.push(part.toString())
-      } else if (part instanceof Draw) {
-        const str = part.toString()
-        if (mode === 'escape-shell') {
-          const escaped = str.replace(/'/g, "'\\''")
-          a.push(`'${escaped}'`)
-        } else {
-          a.push(str)
-        }
       } else {
-        const str = String(part)
-        a.push(mode === 'escape-shell' ? this.#escape(str) : str)
+        a.push(String(part))
       }
     }
 
@@ -99,7 +95,7 @@ class ImageMagickCommandBuilder {
    */
   *#flattenedCommands(): Generator<string | number | Geometry | Draw | Buffer> {
     for (const part of this.#commands) {
-      if (part instanceof ImageMagickCommandBuilder) {
+      if (part instanceof CommandBuilder) {
         yield* part.#flattenedCommands()
       } else {
         yield part
@@ -242,7 +238,7 @@ class ImageMagickCommandBuilder {
     return this
   }
 
-  clone(...indexes: number[]): ImageMagickCommandBuilder {
+  clone(...indexes: number[]): CommandBuilder {
     if (indexes.length > 0) {
       this.#commands.push('-clone')
       this.#commands.push(indexes.join(','))
@@ -502,15 +498,16 @@ class ImageMagickCommandBuilder {
     return this
   }
 
-  colorize(red: number, green?: number, blue?: number): this {
+  colorize(percent: number): this
+  colorize(red: number, green: number, blue: number): this
+  colorize(...args: [percent: number] | [red: number, green: number, blue: number]): this {
     this.#commands.push('-colorize')
 
-    if (green !== undefined && blue !== undefined) {
-      this.#commands.push(`${red},${green},${blue}`)
-    } else if (green !== undefined) {
-      this.#commands.push(`${red},${green}`)
+    if (args.length === 1) {
+      this.#commands.push(args[0])
     } else {
-      this.#commands.push(red)
+      const [red, green, blue] = args
+      this.#commands.push(`${red},${green},${blue}`)
     }
 
     return this
@@ -783,8 +780,9 @@ class ImageMagickCommandBuilder {
     return this
   }
 
-  gamma(value: number): this {
-    this.#commands.push('-gamma')
+  /** `metadataOnly: true` emits `+gamma`, which records the gamma level without changing pixel values */
+  gamma(value: number, metadataOnly?: boolean): this {
+    this.#commands.push(metadataOnly === true ? '+gamma' : '-gamma')
     this.#commands.push(value)
 
     return this
@@ -909,8 +907,9 @@ class ImageMagickCommandBuilder {
     return this
   }
 
-  distort(type: DistortType, args: string): this {
-    this.#commands.push('-distort')
+  /** `bestFit: true` emits `+distort`, which sizes the output to fit the distorted image instead of the input canvas */
+  distort(type: DistortType, args: string, bestFit?: boolean): this {
+    this.#commands.push(bestFit === true ? '+distort' : '-distort')
     this.#commands.push(type)
     this.#commands.push(args)
 
@@ -937,13 +936,19 @@ class ImageMagickCommandBuilder {
     return this
   }
 
-  duplicate(count: number, ...indexes: number[]): this {
-    this.#commands.push('-duplicate')
-
-    if (indexes.length > 0) {
-      this.#commands.push(`${count},${indexes.join(',')}`)
+  /** without arguments, emits `+duplicate`, which copies the last image in the sequence */
+  duplicate(): this
+  duplicate(count: number, ...indexes: number[]): this
+  duplicate(count?: number, ...indexes: number[]): this {
+    if (count === undefined) {
+      this.#commands.push('+duplicate')
     } else {
-      this.#commands.push(count)
+      this.#commands.push('-duplicate')
+      if (indexes.length > 0) {
+        this.#commands.push(`${count},${indexes.join(',')}`)
+      } else {
+        this.#commands.push(count)
+      }
     }
 
     return this
@@ -1265,9 +1270,14 @@ class ImageMagickCommandBuilder {
     return this
   }
 
-  polaroid(angle: number): this {
-    this.#commands.push('-polaroid')
-    this.#commands.push(angle)
+  /** without an angle, emits `+polaroid`, which picks a random rotation */
+  polaroid(angle?: number): this {
+    if (angle === undefined) {
+      this.#commands.push('+polaroid')
+    } else {
+      this.#commands.push('-polaroid')
+      this.#commands.push(angle)
+    }
 
     return this
   }
@@ -1416,14 +1426,15 @@ class ImageMagickCommandBuilder {
     return this
   }
 
-  sample(geometry: string): this
+  sample(w?: number, h?: number): this
   sample(fn: (g: Geometry) => Geometry): this
-  sample(geoOrFn: string | ((g: Geometry) => Geometry)): this {
-    this.#commands.push('-sample')
-    if (typeof geoOrFn === 'function') {
-      this.#commands.push(geoOrFn(new Geometry()))
-    } else {
-      this.#commands.push(geoOrFn)
+  sample(wOrFn?: number | ((g: Geometry) => Geometry), h?: number): this {
+    if (typeof wOrFn === 'function') {
+      this.#commands.push('-sample')
+      this.#commands.push(wOrFn(new Geometry()))
+    } else if (wOrFn !== undefined || h !== undefined) {
+      this.#commands.push('-sample')
+      this.#commands.push(new Geometry().size(wOrFn, h))
     }
     return this
   }
@@ -1435,14 +1446,15 @@ class ImageMagickCommandBuilder {
     return this
   }
 
-  scale(geometry: string): this
+  scale(w?: number, h?: number): this
   scale(fn: (g: Geometry) => Geometry): this
-  scale(geoOrFn: string | ((g: Geometry) => Geometry)): this {
-    this.#commands.push('-scale')
-    if (typeof geoOrFn === 'function') {
-      this.#commands.push(geoOrFn(new Geometry()))
-    } else {
-      this.#commands.push(geoOrFn)
+  scale(wOrFn?: number | ((g: Geometry) => Geometry), h?: number): this {
+    if (typeof wOrFn === 'function') {
+      this.#commands.push('-scale')
+      this.#commands.push(wOrFn(new Geometry()))
+    } else if (wOrFn !== undefined || h !== undefined) {
+      this.#commands.push('-scale')
+      this.#commands.push(new Geometry().size(wOrFn, h))
     }
     return this
   }
@@ -1508,12 +1520,8 @@ class ImageMagickCommandBuilder {
     return this
   }
 
-  shade(azimuth: number, elevation: number, gray?: boolean): this {
-    if (gray === true) {
-      this.#commands.push('+shade')
-    } else {
-      this.#commands.push('-shade')
-    }
+  shade(azimuth: number, elevation: number): this {
+    this.#commands.push('-shade')
     this.#commands.push(`${azimuth}x${elevation}`)
 
     return this
@@ -1713,8 +1721,9 @@ class ImageMagickCommandBuilder {
     return this
   }
 
-  transparent(color: string): this {
-    this.#commands.push('-transparent')
+  /** `invert: true` emits `+transparent`, making every pixel NOT matching the color transparent */
+  transparent(color: string, invert?: boolean): this {
+    this.#commands.push(invert === true ? '+transparent' : '-transparent')
     this.#commands.push(color)
 
     return this
@@ -2277,14 +2286,18 @@ class ImageMagickCommandBuilder {
     return this
   }
 
-  region(width: number, height: number): this
+  region(width: number, height: number, x?: number, y?: number): this
   region(fn: (g: Geometry) => Geometry): this
-  region(widthOrFn: number | ((g: Geometry) => Geometry), height?: number): this {
+  region(widthOrFn: number | ((g: Geometry) => Geometry), height?: number, x?: number, y?: number): this {
     this.#commands.push('-region')
     if (typeof widthOrFn === 'function') {
       this.#commands.push(widthOrFn(new Geometry()))
     } else {
-      this.#commands.push(new Geometry().size(widthOrFn, height))
+      const geo = new Geometry().size(widthOrFn, height)
+      if (x !== undefined && y !== undefined) {
+        geo.offset(x, y)
+      }
+      this.#commands.push(geo)
     }
     return this
   }
@@ -2350,6 +2363,27 @@ class ImageMagickCommandBuilder {
 
   compare(): this {
     this.#commands.push('-compare')
+
+    return this
+  }
+
+  metric(type: MetricType): this {
+    this.#commands.push('-metric')
+    this.#commands.push(type)
+
+    return this
+  }
+
+  highlightColor(color: string): this {
+    this.#commands.push('-highlight-color')
+    this.#commands.push(color)
+
+    return this
+  }
+
+  lowlightColor(color: string): this {
+    this.#commands.push('-lowlight-color')
+    this.#commands.push(color)
 
     return this
   }
@@ -2421,9 +2455,14 @@ class ImageMagickCommandBuilder {
     return this
   }
 
+  /** without indexes, emits `+delete`, which removes the last image in the sequence */
   delete(...indexes: number[]): this {
-    this.#commands.push('-delete')
-    this.#commands.push(indexes.join(','))
+    if (indexes.length > 0) {
+      this.#commands.push('-delete')
+      this.#commands.push(indexes.join(','))
+    } else {
+      this.#commands.push('+delete')
+    }
 
     return this
   }
@@ -2449,11 +2488,7 @@ class ImageMagickCommandBuilder {
     return this
   }
 
-  #escape(data: unknown): string {
-    return escapeString(data)
-  }
-
-  #commands: (string | number | Geometry | ImageMagickCommandBuilder | Draw | Buffer)[] = []
+  #commands: (string | number | Geometry | CommandBuilder | Draw | Buffer)[] = []
 }
 
 /** fds 0-2 are stdin/stdout/stderr; buffers get the descriptors after those */
@@ -2466,15 +2501,4 @@ const FIRST_BUFFER_FD = 3
 function signedOffset(value: NumberOrPercent): string {
   const str = String(value)
   return str.startsWith('-') ? str : `+${str}`
-}
-
-function escapeString(data: unknown): string {
-  const input = String(data)
-
-  // if single safe word with simple characters, return it
-  if (input.match(/^[\w+.\-:=,%]+$/)) {
-    return input
-  }
-
-  return `'${input.replace(/\\/g, '\\\\').replace(/'/g, "'\\''")}'`
 }

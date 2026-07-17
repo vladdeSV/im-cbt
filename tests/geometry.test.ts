@@ -52,8 +52,23 @@ describe('geometry misc', () => {
     }
   })
 
+  test('flag aliases map to their characters', () => {
+    const aliases = [
+      ['fill-area', '^'],
+      ['exact', '!'],
+      ['enlarge-only', '<'],
+      ['shrink-only', '>'],
+      ['pad', '#'],
+    ] as const
+
+    for (const [alias, char] of aliases) {
+      expect(new Geometry().flag(alias).toString()).toStrictEqual(char)
+    }
+  })
+
   test('geometry with flag', () => {
     expect(new Geometry().size(100, 100).flag('!').toString()).toStrictEqual('100x100!')
     expect(new Geometry().scale(130, 90).flag('^').toString()).toStrictEqual('130%x90%^')
+    expect(new Geometry().size(200, 300).flag('fill-area').toString()).toStrictEqual('200x300^')
   })
 })
