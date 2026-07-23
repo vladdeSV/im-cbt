@@ -24,32 +24,27 @@ const image: Buffer = await run(im, 'png')
 ```
 
 ```ts
-const photo: Buffer = await readFile('photo.jpg')
-const im = wand().resource(photo).resize(100, 100)
-
-const thumbnail: Buffer = await run(im, 'jpg')
-```
-
-my personal convention is to create the wand and call it `im`, but you can choose whatever you want.
-
-every non-deprecated option has a method. if something is missing, you can run special commands with eg. `im.command('-some-option', 50)`.
-
-`run(...)` needs ImageMagick installed. it runs `magick` from your PATH (override with `run(im, 'png', { binary: 'my-magick-binary' })`). rejects with an `ImageMagickError` if something goes wrong.
-
-geometry flags have descriptive aliases: `.flag('fill-area')` is the same as `.flag('^')`. the others are `exact` (`!`), `enlarge-only` (`<`), `shrink-only` (`>`), and `pad` (`#`).
-
-```ts
 const im = wand('wizard:')
 
-const smallLogo = wand('logo:')
+const photo: Buffer = await readFile('./photo.jpg')
+const smallLogo = wand(photo)
   .resize(g => g.size(200, 300).flag('^'))
 
 im.parens(smallLogo)
   .gravity('SouthEast')
   .composite()
 
-const image = await run(im, 'png')
+const image = await run(im, 'png', { binary: '/usr/local/bin/magick' })
 ```
+
+my personal convention is to create the wand and call it `im`, but you can choose whatever you want.
+
+every option has a method. if something is missing, you can run special commands with eg. `im.command('-some-option', 42)`.
+
+`run(...)` needs ImageMagick installed. it runs `magick` from your PATH (override with `run(im, 'png', { binary: 'my-magick-binary' })`). rejects with an `ImageMagickError` if something goes wrong.
+
+geometry flags have descriptive aliases: `.flag('fill-area')` is the same as `.flag('^')`. the others are `exact` (`!`), `enlarge-only` (`<`), `shrink-only` (`>`), and `pad` (`#`).
+
 
 ## advanced: spawning yourself
 
@@ -58,7 +53,7 @@ const image = await run(im, 'png')
 - `im.args()` returns all arguments for use with `spawn(...)`
 - `im.buffers()` returns all `Buffer`s, when you've passed in images in-memory.
 
-the arguments work with any imagemagick tool. a wand holding only options doubles as a mogrify option set:
+the arguments work with any imagemagick tool. example for `mogrify`:
 
 ```ts
 import { spawn } from 'node:child_process' // do not use `execute`, risk for injection attacks
@@ -81,14 +76,18 @@ const after: Buffer = // ... and an edited version of it
 const im = wand().metric('AE').resource(before).resource(after)
 
 const buffers = im.buffers()
-// note: `magick compare` exits with 0 for identical images and 1 for differing ones
 const child = spawn('magick', ['compare', ...im.args(), 'diff.png'], {
-  stdio: ['ignore', 'inherit', 'inherit', ...buffers.map(() => 'pipe' as const)],
+  stdio: [
+    // stdin, stdout, stderr
+    'ignore', 'inherit', 'inherit',
+    // for every other resource, pass as pipe
+    ...buffers.map(() => 'pipe' as const)
+    ],
 })
 
 for (const [index, buffer] of buffers.entries()) {
   const stream = child.stdio[3 + index] as Writable
-  stream.on('error', () => {}) // magick may exit before reading every input
+  stream.on('error', () => {})
   stream.end(buffer)
 }
 
