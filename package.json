@@ -1,11 +1,11 @@
 {
-  "name": "im-cbt",
-  "version": "0.2.0",
+  "name": "magick-wand",
+  "version": "1.0.0",
   "description": "fluent ImageMagick 7 command line builder",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/vladdeSV/im-cbt.git"
+    "url": "git+https://github.com/vladdeSV/magick-wand.git"
   },
   "keywords": [
     "imagemagick",

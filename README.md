@@ -1,15 +1,15 @@
-# ImageMagick Command Builder Tool
+# magick-wand 🪄
 
-build ImageMagick v7 commands programmatically. tested against `v7.1.2-27`.
+build ImageMagick v7 commands programmatically. for server-side TypeScript/JavaScript on Node.js. tested against ImageMagick `v7.1.2-27`.
 
 ```sh
-<package manager> add im-cbt
+<package manager> add magick-wand
 ```
 
 ## examples
 
 ```ts
-import { wand, run } from 'im-cbt'
+import { wand, run } from 'magick-wand'
 
 const im = wand('logo:')
 im.resize(100, 200)
@@ -95,3 +95,10 @@ child.on('close', code => {
   console.log(`compare exited with ${code}`)
 })
 ```
+
+## previous versions
+
+this library was published as `im-cbt` through 0.2.0. `magick-wand@1.0.0` has the same api as `im-cbt@0.2.0`, so migrating is renaming the dependency. coming from `im-cbt@0.1.x`, `parts()`/`fds()` are now `args()`/`buffers()`.
+
+## license
+MIT © [Vladimirs Nordholm](https://github.com/vladdeSV)
