@@ -1303,17 +1303,17 @@ test('mixed string and buffer resources', () => {
   expect(im.buffers()).toEqual([buffer])
 })
 
-test('fds() returns copy of buffers array', () => {
+test('buffers() returns copy of buffers array', () => {
   const im = new CB()
   const buffer = Buffer.from('test')
 
   im.resource(buffer)
-  const fds1 = im.buffers()
-  const fds2 = im.buffers()
+  const buffers1 = im.buffers()
+  const buffers2 = im.buffers()
 
-  expect(fds1).toEqual([buffer])
-  expect(fds2).toEqual([buffer])
-  expect(fds1).not.toBe(fds2)
+  expect(buffers1).toEqual([buffer])
+  expect(buffers2).toEqual([buffer])
+  expect(buffers1).not.toBe(buffers2)
 })
 
 test('complex command with buffers', () => {

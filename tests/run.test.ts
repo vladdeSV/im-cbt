@@ -71,7 +71,7 @@ test('early magick failure does not crash on unread buffer input', async () => {
 test('missing binary rejects with a spawn error', async () => {
   const command = wand().xc('red')
 
-  await expect(run(command, 'png', { binary: 'im-cbt-no-such-binary' })).rejects.toThrow('failed to spawn')
+  await expect(run(command, 'png', { binary: 'magick-wand-no-such-binary' })).rejects.toThrow('failed to spawn')
 })
 
 test('running the same builder twice works', async () => {

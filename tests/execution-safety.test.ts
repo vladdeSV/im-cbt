@@ -9,7 +9,7 @@ import { wand } from '../source/index.ts'
 // system font (DejaVu-Sans); failures here on font-less hosts are unrelated
 // to library correctness
 
-const dir = mkdtempSync(join(tmpdir(), 'im-cbt-draw-'))
+const dir = mkdtempSync(join(tmpdir(), 'magick-wand-draw-'))
 afterAll(() => {
   rmSync(dir, { recursive: true, force: true })
 })
