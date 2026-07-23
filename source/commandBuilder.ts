@@ -53,9 +53,6 @@ class CommandBuilder {
     }
   }
 
-  /**
-   * used with `spawn('magick', ...im.args())`
-   */
   args(): string[] {
     const a: string[] = []
     let fd = FIRST_BUFFER_FD
@@ -73,9 +70,6 @@ class CommandBuilder {
     return a
   }
 
-  /**
-   * used when piping buffers into `spawn(...)`
-   */
   buffers(): Buffer[] {
     const buffers: Buffer[] = []
     for (const part of this.#flattenedCommands()) {
@@ -87,10 +81,6 @@ class CommandBuilder {
     return buffers
   }
 
-  /**
-   * yields commands depth-first with nested builders inlined. parts() and
-   * fds() share this traversal, so fd numbering and buffer order always agree
-   */
   *#flattenedCommands(): Generator<string | number | Geometry | Draw | Buffer> {
     for (const part of this.#commands) {
       if (part instanceof CommandBuilder) {
